@@ -22,7 +22,7 @@ typedef enum { // vm runs the chunk & and responds with a value from this enum
 
 void initVM();
 void freeVM();
-InterpretResult interpret(Chunk* chunk);
+InterpretResult interpret(const char* source);
 void push(Value value);
 Value pop();
 

@@ -2,6 +2,7 @@
 
 #include "debug.h"
 #include "vm.h"
+#include "compiler.h"
 
 VM vm;
 
@@ -70,8 +71,7 @@ static InterpretResult run() {
 #undef BINARY_OP
 }
 
-InterpretResult interpret(Chunk* chunk) {
-    vm.chunk = chunk; // stores the current chunk being executed into the vm
-    vm.ip = vm.chunk->code; // sets the instruction pointer to the actual code (PC/IR???)
-    return run(); // calls a helper function that actually runs the bytecode instructions
+InterpretResult interpret(const char* source) {
+    compile(source); // calls the compile function on the pointer to the source
+    return INTERPRET_OK; 
 }
