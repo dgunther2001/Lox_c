@@ -6,10 +6,17 @@
 
 typedef enum {
     OP_CONSTANT, // constant production instruction
+    OP_NIL, // NIL
+    OP_TRUE, // TRUE
+    OP_FALSE, // FALSE
+    OP_EQUAL, // == => deals with != b/c !( == )
+    OP_GREATER, // < => deals with >= b/c is !( < )
+    OP_LESS, // > => deals with <= b/c is !( > )
     OP_ADD, // addition operator
     OP_SUBTRACT, // subtraction operator
     OP_MULTIPLY, // multiplication operator
     OP_DIVIDE, // division operator
+    OP_NOT, // NEGATION OF BOOLEANS
     OP_NEGATE, // negation operation (-)
     OP_RETURN, // return from current instruction
 } OpCode; // defines the opcode of our operation (note using bytecode instead of native assembly)

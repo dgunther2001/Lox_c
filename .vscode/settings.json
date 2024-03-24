@@ -2,6 +2,29 @@
     "files.associations": {
         "common.h": "c",
         "stdlib.h": "c",
-        "scanner.h": "c"
+        "scanner.h": "c",
+        "__bit_reference": "c",
+        "__node_handle": "c",
+        "atomic": "c",
+        "bitset": "c",
+        "deque": "c",
+        "__memory": "c",
+        "limits": "c",
+        "locale": "c",
+        "optional": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "vector": "c",
+        "chrono": "c",
+        "cstddef": "c",
+        "random": "c",
+        "charconv": "c",
+        "format": "c",
+        "array": "c",
+        "functional": "c",
+        "utility": "c",
+        "vm.h": "c"
     }
 }
