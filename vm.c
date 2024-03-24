@@ -72,6 +72,19 @@ static InterpretResult run() {
 }
 
 InterpretResult interpret(const char* source) {
-    compile(source); // calls the compile function on the pointer to the source
-    return INTERPRET_OK; 
+    Chunk chunk;
+    initChunk(&chunk); // initializes a chunk
+
+    if(!compile(source, &chunk)) { // throws an error if we get a compiler error
+        freeChunk(&chunk);
+        return INTERPRET_COMPILE_ERROR;
+    }
+
+    vm.chunk = &chunk; // pass or chunk into the vm
+    vm.ip = vm.chunk->code; // set the instruction pointer to the start of our code
+
+    InterpretResult result = run(); // runs the result
+
+    freeChunk(&chunk); // frees up the chunk
+    return result; // returns the result
 }

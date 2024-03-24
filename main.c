@@ -13,6 +13,10 @@
 #include "value.c"
 #include "vm.h"
 #include "vm.c"
+#include "scanner.h"
+#include "scanner.c"
+#include "compiler.h"
+#include "compiler.c"
 
 static void repl() { // interpretes our code line by measly line
     char line[1024]; // creatse a line array of 1024 characters
@@ -41,7 +45,7 @@ static char* readFile(const char* path) { // creates a massive character buffer 
 
     char* buffer = (char*)malloc(fileSize + 1); // allocates a buffer based on the size of the file
     if (buffer == NULL) { // throws an error if we can't allocate the buffer isteld because there isn't enough memory
-        fprintf(stderr, "Not enough memory to read \"%S\".\n", path);
+        fprintf(stderr, "Not enough memory to read \"%s\".\n", path);
         exit(74);
     }
 
