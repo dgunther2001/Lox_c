@@ -25,6 +25,7 @@ struct ObjString {
     Obj obj; // the object itself
     int length; // string length
     char* chars; // pointer to the actual string
+    uint32_t hash; //caching the strings so we don't have to fully walk them each time we want to call the hash function on it (stores the hash code in the object itself)
 };
 
 ObjString* takeString(char* chars, int length);

@@ -19,6 +19,8 @@
 #include "compiler.c"
 #include "object.h"
 #include "object.c"
+#include "table.h"
+#include "table.c"
 
 static void repl() { // interpretes our code line by measly line
     char line[1024]; // creatse a line array of 1024 characters

@@ -30,9 +30,11 @@ static void runtimeError(const char* format, ...) {
 void initVM() { // initializes the stack
     resetStack(); // just sets the stack pointer to 0
     vm.objects = NULL;
+    initTable(&vm.strings); // initializes our hash table of strings
 }
 
 void freeVM() {
+    freeTable(&vm.strings); // frees up memory of the string hash table in the vm
     freeObjects(); // frees up the linked list of objects we were storing
 }
 
@@ -67,6 +69,30 @@ static void concatenate() {
 
     ObjString* result = takeString(chars, length); // gets the result
     push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
+}
+
+/*
+static void concatenateNUM_STRING() {
+    ObjString* b = AS_STRING(pop());
+    Value a_val = NUMBER_VAL(AS_NUMBER(pop()));
+    
+    ObjString* a = AS_STRING(a_val);
+
+    int length = a->length + b->length; // creates a cumulative length value
+    char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
+    memcpy(chars, a->chars, a->length); // copies a 
+    memcpy(chars + a->length, b->chars, b->length); // copies b
+    chars[length] = '\0'; // adds the terminus
+
+    ObjString* result = takeString(chars, length); // gets the result
+    push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
+    
+    
+}
+*/
+
+static void concatenateSTRING_NUM() {
+
 }
 
 static InterpretResult run() {
@@ -109,7 +135,11 @@ static InterpretResult run() {
             case OP_ADD: {
                 if (IS_STRING(peekVM(0)) && IS_STRING(peekVM(1))) {
                     concatenate();
-                } else if (IS_NUMBER(peekVM(0)) && IS_NUMBER(peekVM(1))) {
+                } /* else if (IS_NUMBER(peekVM(0)) && IS_STRING(peekVM(1)))  {
+                    concatenateNUM_STRING();
+                } else if (IS_STRING(peekVM(0)) && IS_NUMBER(peekVM(1))) {
+                    concatenateSTRING_NUM(); 
+                } */ else if (IS_NUMBER(peekVM(0)) && IS_NUMBER(peekVM(1))) {
                     double b = AS_NUMBER(pop());
                     double a = AS_NUMBER(pop());
                     push(NUMBER_VAL(a + b));
