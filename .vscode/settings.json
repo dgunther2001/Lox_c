@@ -25,6 +25,13 @@
         "array": "c",
         "functional": "c",
         "utility": "c",
-        "vm.h": "c"
+        "vm.h": "c",
+        "complex": "cpp",
+        "__hash_table": "cpp",
+        "__tuple": "cpp",
+        "forward_list": "cpp",
+        "variant": "cpp",
+        "compare": "cpp",
+        "object.h": "c"
     }
 }

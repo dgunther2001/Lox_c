@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "debug.h"
+#include "object.h"
+#include "memory.h"
 #include "vm.h"
 #include "compiler.h"
 
@@ -26,10 +29,11 @@ static void runtimeError(const char* format, ...) {
 
 void initVM() { // initializes the stack
     resetStack(); // just sets the stack pointer to 0
+    vm.objects = NULL;
 }
 
 void freeVM() {
-
+    freeObjects(); // frees up the linked list of objects we were storing
 }
 
 void push(Value value) { // pushes a value onto the stack
@@ -48,6 +52,21 @@ static Value peekVM(int distance) {
 
 static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+static void concatenate() {
+    // gets both initial strings off of the stack
+    ObjString* b = AS_STRING(pop()); 
+    ObjString* a = AS_STRING(pop());
+
+    int length = a->length + b->length; // creates a cumulative length value
+    char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
+    memcpy(chars, a->chars, a->length); // copies a 
+    memcpy(chars + a->length, b->chars, b->length); // copies b
+    chars[length] = '\0'; // adds the terminus
+
+    ObjString* result = takeString(chars, length); // gets the result
+    push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
 
 static InterpretResult run() {
@@ -87,7 +106,22 @@ static InterpretResult run() {
             }
             case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
             case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
-            case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
+            case OP_ADD: {
+                if (IS_STRING(peekVM(0)) && IS_STRING(peekVM(1))) {
+                    concatenate();
+                } else if (IS_NUMBER(peekVM(0)) && IS_NUMBER(peekVM(1))) {
+                    double b = AS_NUMBER(pop());
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a + b));
+                } else {
+                    runtimeError(
+                        "Operands must be two numbers or two strings."
+                    );
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            
             case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
             case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;

@@ -176,6 +176,10 @@ static void numberC() { // this simply compiles number literals
     emitConstant(NUMBER_VAL(value));
 }
 
+static void stringC() {
+    emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
+}
+
 static void unary() {
     TokenType operatorType = parser.previous.type; // firgures out the previous token type
 
@@ -209,7 +213,7 @@ ParseRule rules[] = {
     [TOKEN_LESS]            = {NULL, binary, PREC_COMPARISON},
     [TOKEN_LESS_EQUAL]      = {NULL, binary, PREC_COMPARISON},
     [TOKEN_IDENTIFIER]      = {NULL, NULL, PREC_NONE},
-    [TOKEN_STRING]          = {NULL, NULL, PREC_NONE},
+    [TOKEN_STRING]          = {stringC, NULL, PREC_NONE},
     [TOKEN_NUMBER]          = {numberC, NULL, PREC_NONE},
     [TOKEN_AND]             = {NULL, NULL, PREC_NONE},
     [TOKEN_CLASS]           = {NULL, NULL, PREC_NONE},

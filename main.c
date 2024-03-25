@@ -17,6 +17,8 @@
 #include "scanner.c"
 #include "compiler.h"
 #include "compiler.c"
+#include "object.h"
+#include "object.c"
 
 static void repl() { // interpretes our code line by measly line
     char line[1024]; // creatse a line array of 1024 characters

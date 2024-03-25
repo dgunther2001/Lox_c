@@ -12,6 +12,7 @@ typedef struct {
     uint8_t* ip; // points straight to the current bytecode isntruction in the chunk
     Value stack[STACK_MAX]; // array of values defined as the stack
     Value* stackTop; // THE STACK POINTERRRRR
+    Obj* objects; // pointer to the head of the intrusive linked list of objects
 } VM;
 
 typedef enum { // vm runs the chunk & and responds with a value from this enum
@@ -19,6 +20,8 @@ typedef enum { // vm runs the chunk & and responds with a value from this enum
     INTERPRET_COMPILE_ERROR,
     INTERPRET_RUNTIME_ERROR
 } InterpretResult;
+
+extern VM vm; // allows external exposure of our virtual machine
 
 void initVM();
 void freeVM();

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "memory.h"
+#include "vm.h"
 
 /*
 PARAMS ->       oldSize         newSize         Operation       
@@ -19,4 +20,24 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
     void* result = realloc(pointer, newSize); // reallocates a new pointer with a piece of reallocated memory that uses the initial pointer, but allocates the correct size
     if (result == NULL) exit(1); // if there isn't enough memory for realloc, we exit the program
     return result;
+}
+
+static void freeObject(Obj* object) {
+    switch(object->type) {
+        case OBJ_STRING: {
+            ObjString* string = (ObjString*)object; // sets a pointer to the passed object pointer
+            FREE_ARRAY(char, string->chars, string->length + 1); // calls the free array function, so we no longer store pertinent information
+            FREE(ObjString, object); // frees up the object itself
+            break;
+        }
+    }
+}
+
+void freeObjects() {
+    Obj* object = vm.objects; // gets the head of the linked list of objects
+    while (object != NULL) {
+        Obj* next = object->next; // saves a pointer to the next object
+        freeObject(object); // frees up the current object
+        object = next; // goes to where the next pointer points to
+    }
 }
