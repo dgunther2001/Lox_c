@@ -30,10 +30,13 @@ static void runtimeError(const char* format, ...) {
 void initVM() { // initializes the stack
     resetStack(); // just sets the stack pointer to 0
     vm.objects = NULL;
+
+    initTable(&vm.globals); // initializes our hash table of global variables
     initTable(&vm.strings); // initializes our hash table of strings
 }
 
 void freeVM() {
+    freeTable(&vm.globals); // frees up the memory of the global variable hash table in the vm
     freeTable(&vm.strings); // frees up memory of the string hash table in the vm
     freeObjects(); // frees up the linked list of objects we were storing
 }
@@ -98,6 +101,7 @@ static void concatenateSTRING_NUM() {
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++) //reads the value at the incremented instruction pointer
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()]) // looks up the next byte in bytecode and and looks up the value in the value table and returns it
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) do { if (!IS_NUMBER(peekVM(0)) || !IS_NUMBER(peekVM(1))) { runtimeError("Operands must be numbers."); return INTERPRET_RUNTIME_ERROR;} double b = AS_NUMBER(pop()); double a = AS_NUMBER(pop()); push(valueType(a op b)); } while(false) //  macro for executing a bianry op based on the input
 
 
@@ -124,6 +128,32 @@ static InterpretResult run() {
             case OP_NIL: push(NIL_VAL); break;
             case OP_TRUE: push(BOOL_VAL(true)); break;
             case OP_FALSE: push(BOOL_VAL(false)); break;
+            case OP_POP: pop(); break;
+            case OP_GET_GLOBAL: {
+                ObjString* name = READ_STRING(); // reads the string
+                Value value; // declares a value variable (our generic object)
+                if(!tableGet(&vm.globals, name, &value)) { // causes a runtime error if we can't retieve the value because it DNE, but the tableGet(...) call populates the value memory location 
+                    runtimeError("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(value); // pushes what is now in value, so it exists on the stack for us to read
+                break;
+            }
+            case OP_DEFINE_GLOBAL: {
+                ObjString* name = READ_STRING(); 
+                tableSet(&vm.globals, name, peekVM(0)); 
+                pop();
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                ObjString* name = READ_STRING();
+                if (tableSet(&vm.globals, name, peekVM(0))) { // throws a runtime error if the variable we're trying to reset deosn't exist in the global variable hash table
+                    tableDelete(&vm.globals, name);
+                    runtimeError("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
             case OP_EQUAL: {
                 Value b = pop();
                 Value a = pop();
@@ -165,15 +195,20 @@ static InterpretResult run() {
                 }
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
                 break;
-            case OP_RETURN: // pops the stack and prints top value before exiting the progra
-                printValue(pop());
+            case OP_PRINT: {
+                printValue(pop()); // pops the resultant value that has already been pushed to the top of the stack
                 printf("\n");
+                break;
+            }
+            case OP_RETURN: {
                 return INTERPRET_OK;
+            }
         }
     }
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 #undef BINARY_OP
 }
 

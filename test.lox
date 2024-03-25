@@ -1,0 +1,6 @@
+var dannygslice = "Daniel";
+print dannygslice;
+dannygslice = "Shut up daniel";
+print dannygslice;
+
+

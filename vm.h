@@ -13,6 +13,7 @@ typedef struct {
     uint8_t* ip; // points straight to the current bytecode isntruction in the chunk
     Value stack[STACK_MAX]; // array of values defined as the stack
     Value* stackTop; // THE STACK POINTERRRRR
+    Table globals; // hash table that stores our global variables
     Table strings; // a table of STRINGSSSSS!!!
     Obj* objects; // pointer to the head of the intrusive linked list of objects
 } VM;
