@@ -23,6 +23,12 @@ static int simpleInstruction(const char* name, int offset) {
     return offset + 1; // iterates the offset when we return back to the dissasembleChunk(...) method and returns
 }
 
+static int byteInstruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t slot = chunk->code[offset+1];
+    printf("%-16s %4d\n", name, slot);
+    return offset + 2;
+}
+
 int disassembleInstruction(Chunk* chunk, int offset) {
     printf("%04d ", offset); // prints out the byte offset of the instruction (line number for now)
     if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) { // if the value in lines (storing literal line integers) are equal, then we print a pipe 
@@ -47,6 +53,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return simpleInstruction("OP_FALSE", offset);
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
+        case OP_SET_LOCAL:
+            return byteInstruction("OP_GET_LOCAL", chunk, offset);
+        case OP_GET_LOCAL:
+            return byteInstruction("OP_GET_LOCAL", chunk, offset);
         case OP_GET_GLOBAL:
             return constantInstruction("OP_GET_GLOBAL", chunk, offset);
         case OP_DEFINE_GLOBAL:

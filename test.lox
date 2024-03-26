@@ -1,6 +1,7 @@
-var dannygslice = "Daniel";
-print dannygslice;
-dannygslice = "Shut up daniel";
-print dannygslice;
+var a = "a";
+{
+    var b = "b";
+    print b;
+}
 
-
+print a;

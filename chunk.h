@@ -10,6 +10,8 @@ typedef enum {
     OP_TRUE, // TRUE
     OP_FALSE, // FALSE
     OP_POP, // popping instruction
+    OP_GET_LOCAL, // loads local variables
+    OP_SET_LOCAL, // allows us to set the value of a local variable
     OP_GET_GLOBAL, // loads global variables
     OP_DEFINE_GLOBAL, // defining global variable operation
     OP_SET_GLOBAL, // allow us to reset the values of a variable

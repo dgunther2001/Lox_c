@@ -129,6 +129,16 @@ static InterpretResult run() {
             case OP_TRUE: push(BOOL_VAL(true)); break;
             case OP_FALSE: push(BOOL_VAL(false)); break;
             case OP_POP: pop(); break;
+            case OP_GET_LOCAL: {
+                uint8_t slot = READ_BYTE(); // finds where the local lives
+                push(vm.stack[slot]); // pushes it onto the stack?
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                vm.stack[slot] = peekVM(0);
+                break;
+            }
             case OP_GET_GLOBAL: {
                 ObjString* name = READ_STRING(); // reads the string
                 Value value; // declares a value variable (our generic object)
