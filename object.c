@@ -57,10 +57,54 @@ ObjString* copyString(const char* chars, int length) {
     return allocateString(heapChars, length, hash); // calls the string allocation fucntion
 }
 
+ObjList* newList() {
+    ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST); // allocates an object of type list
+    list->items = NULL;
+    list->count = 0;
+    list->capacity = 0;
+    return list;
+}
+
+void appendToList(ObjList* list, Value value) { // append to the end of a list
+    if (list->capacity < list->count + 1) { // grows the list capacity dynamically if needed
+        int oldCapacity = list->capacity;
+        list->capacity = GROW_CAPACITY(oldCapacity);
+        list->items = GROW_ARRAY(Value, list->items, oldCapacity, list->capacity);
+    }
+    list->items[list->count] = value; //adds the desired value to the end of the list
+    list->count++; // increments the count
+    return;
+}
+
+void storeToList(ObjList* list, int index, Value value) { // change the value at a particular index
+    list->items[index] = value;
+}
+
+Value indexFromList(ObjList* list, int index) { // returns the value of a list a specific index
+    return list->items[index];
+}
+
+void deleteFromList(ObjList* list, int index) {
+    for (int i = index; i < list->count - 1; i++) { // moves everything after deletion index and copies it one back
+        list->items[i] = list->items[i+1];
+    }
+    list->items[list->count - 1] = NIL_VAL; // sets the end to a null value
+    list->count--;
+}
+
+bool isValidListIndex(ObjList* list, int index) {
+    if (index < 0 || index > list->count - 1) {
+        return false;
+    }
+    return true;
+}
+
 void printObject(Value value) { // allows us to print out the native c values of a lox object
     switch(OBJ_TYPE(value)) {
         case OBJ_STRING:
             printf("%s", AS_CSTRING(value));
+            break;
+        case OBJ_LIST:
             break;
     }
 }

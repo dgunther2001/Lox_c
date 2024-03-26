@@ -1,7 +1,2 @@
-var a = "a";
-{
-    var b = "b";
-    print b;
-}
-
-print a;
+var a = [1, 2, 3];
+print a[3];

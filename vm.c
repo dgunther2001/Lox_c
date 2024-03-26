@@ -74,6 +74,33 @@ static void concatenate() {
     push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
 
+static Value appendNative(int argCount, Value* args) {
+    // append the value and increment length
+    if (argCount != 2 || !IS_LIST(args[0])) {
+        // error handling
+    }
+    ObjList* list = AS_LIST(args[0]);
+    Value item = args[1];
+    appendToList(list, item);
+    return NIL_VAL;
+}
+
+static Value deleteNative(int argCount, Value* args) {
+    if (argCount != 2  || !IS_LIST(args[0]) || !IS_NUMBER(args[1])) {
+        // do some error handling
+    }
+
+    ObjList* list = AS_LIST(args[0]);
+    int index = AS_NUMBER(args[1]);
+
+    if (!isValidListIndex(list, index)) {
+        // more error handling
+    }
+
+    deleteFromList(list, index);
+    return NIL_VAL;
+}
+
 /*
 static void concatenateNUM_STRING() {
     ObjString* b = AS_STRING(pop());
@@ -168,6 +195,75 @@ static InterpretResult run() {
                 Value b = pop();
                 Value a = pop();
                 push(BOOL_VAL(valuesEqual(a, b)));
+                break;
+            }
+            case OP_BUILD_LIST: {
+                ObjList* list = newList();
+                uint8_t itemCount = READ_BYTE();
+
+                push(OBJ_VAL(list));
+                for (int i = itemCount; i > 0; i--) {
+                    appendToList(list, peekVM(i));
+                }
+                pop();
+
+                while (itemCount-- > 0) {
+                    pop();
+                }
+
+                push(OBJ_VAL(list));
+                break;
+            }
+            case OP_INDEX_SUBSCR: {
+                Value index = pop();
+                Value list = pop();
+                Value result;
+
+                if (!IS_LIST(list)) {
+                    runtimeError("Invalid type to index to.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                ObjList* listObj = AS_LIST(list);
+
+                if(!IS_NUMBER(index)) {
+                    runtimeError("List index is not a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                int indexInt = AS_NUMBER(index);
+
+                if (!isValidListIndex(listObj, indexInt)) {
+                    runtimeError("List index out of range.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                result = indexFromList(listObj, AS_NUMBER(index));
+                push(result);
+                break;
+            }
+            case OP_STORE_SUBSCR: {
+                Value item = pop();
+                Value index = pop();
+                Value list = pop();
+
+                if (!IS_LIST(list)) {
+                    runtimeError("Cannot store value in a non-list.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                ObjList* listObj = AS_LIST(list);
+
+                if (!IS_NUMBER(index)) {
+                    runtimeError("List index is not a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                int indexInt = AS_NUMBER(index);
+
+                if(!isValidListIndex(listObj, indexInt)) {
+                    runtimeError("Invalid list index.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                storeToList(listObj, indexInt, item);
+                push(item);
                 break;
             }
             case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;

@@ -16,6 +16,9 @@ typedef enum {
     OP_DEFINE_GLOBAL, // defining global variable operation
     OP_SET_GLOBAL, // allow us to reset the values of a variable
     OP_EQUAL, // == => deals with != b/c !( == )
+    OP_BUILD_LIST, // building a list in the first place
+    OP_INDEX_SUBSCR, // getting a value at an index
+    OP_STORE_SUBSCR, // storing at an index
     OP_GREATER, // < => deals with >= b/c is !( < )
     OP_LESS, // > => deals with <= b/c is !( > )
     OP_ADD, // addition operator

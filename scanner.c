@@ -186,6 +186,8 @@ Token scanToken() {
         // makes a token based on the returned character from the advance function if it matches one of our single character lexemes
         case '(': return makeToken(TOKEN_LEFT_PAREN);
         case ')': return makeToken(TOKEN_RIGHT_PAREN);
+        case '[': return makeToken(TOKEN_LEFT_BRACKET);
+        case ']': return makeToken(TOKEN_RIGHT_BRACKET);
         case '{': return makeToken(TOKEN_LEFT_BRACE);
         case '}': return makeToken(TOKEN_RIGHT_BRACE);
         case ';': return makeToken(TOKEN_SEMICOLON);

@@ -65,6 +65,12 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return constantInstruction("OP_SET_GLOBAL", chunk, offset);
         case OP_EQUAL:
             return simpleInstruction("OP_EQUAL", offset);
+        case OP_BUILD_LIST:
+            return simpleInstruction("OP_BUILD_LIST", offset);
+        case OP_INDEX_SUBSCR:
+            return simpleInstruction("OP_INDEX_SUBSCR", offset);
+        case OP_STORE_SUBSCR:
+            return simpleInstruction("OP_STORE_SUBSCR", offset);
         case OP_GREATER:
             return simpleInstruction("OP_GREATER", offset);
         case OP_LESS:

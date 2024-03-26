@@ -30,6 +30,12 @@ static void freeObject(Obj* object) {
             FREE(ObjString, object); // frees up the object itself
             break;
         }
+        case OBJ_LIST: {
+            ObjList* list = (ObjList*)object;
+            FREE_ARRAY(Value*, list->items, list->count);
+            FREE(ObjList, object);
+            break;
+        }
     }
 }
 
@@ -41,3 +47,13 @@ void freeObjects() {
         object = next; // goes to where the next pointer points to
     }
 }
+
+/* INCLUDE LATER IN  BLANKEN OBJECT FOR GARBAGE COLLECTION
+case OBJ_LIST: {
+    ObjList* list = (ObjList*)object;
+    for (int i = 0; i < list->count; i++) {
+        markValue(list->items[i]);
+    }
+    break;
+}
+*/
