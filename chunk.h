@@ -27,7 +27,10 @@ typedef enum {
     OP_DIVIDE, // division operator
     OP_NOT, // NEGATION OF BOOLEANS
     OP_NEGATE, // negation operation (-)
-    OP_PRINT, // printing operation
+    OP_PRINT, // printing operation,
+    OP_JUMP, // a regulation unconditional branch (jump)
+    OP_JUMP_IF_FALSE, // jump instruction for conditionals
+    OP_LOOP, // loop isntruction
     OP_RETURN, // return from current instruction
 } OpCode; // defines the opcode of our operation (note using bytecode instead of native assembly)
 

@@ -1,2 +1,18 @@
 var a = [1, 2, 3];
-print a[3];
+var b = 7;
+if (a[2] > b) {
+    print a[2];
+} else if (b > a[1] and b < a[2]) {
+    print a[1];
+} else {
+    print a[0];
+}
+
+while (a[2] <= b) {
+    print b;
+    b = b - 1;
+}
+
+for (var l = 0; l < 2; l = l + 1) {
+    print a[l];
+}

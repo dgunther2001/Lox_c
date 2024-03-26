@@ -128,6 +128,7 @@ static void concatenateSTRING_NUM() {
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++) //reads the value at the incremented instruction pointer
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()]) // looks up the next byte in bytecode and and looks up the value in the value table and returns it
+#define READ_SHORT() (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8) | vm.ip[-1])) // takes the next two bytes in the chunk and creates a two bit integer out of them
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) do { if (!IS_NUMBER(peekVM(0)) || !IS_NUMBER(peekVM(1))) { runtimeError("Operands must be numbers."); return INTERPRET_RUNTIME_ERROR;} double b = AS_NUMBER(pop()); double a = AS_NUMBER(pop()); push(valueType(a op b)); } while(false) //  macro for executing a bianry op based on the input
 
@@ -306,6 +307,21 @@ static InterpretResult run() {
                 printf("\n");
                 break;
             }
+            case OP_JUMP: {
+                uint16_t offset = READ_SHORT();
+                vm.ip += offset;
+                break;
+            }
+            case OP_JUMP_IF_FALSE: {
+                uint16_t offset = READ_SHORT(); // reads 2 bits instead
+                if (isFalsey(peekVM(0))) vm.ip += offset; // if the condition is false, we jump the instruction pointer...
+                break;
+            }
+            case OP_LOOP: {
+                uint16_t offset = READ_SHORT(); // gets the offset within the loop
+                vm.ip -= offset; // jumps back to the start of the loop if called
+                break;
+            }
             case OP_RETURN: {
                 return INTERPRET_OK;
             }
@@ -314,6 +330,7 @@ static InterpretResult run() {
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_SHORT
 #undef READ_STRING
 #undef BINARY_OP
 }
