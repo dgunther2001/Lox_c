@@ -1,2 +1,4 @@
-var a = [true, false, 67.2, 44, nil, "hello"];
-print a;
+spawn a = scan;
+spawn b = scan;
+
+print a + b;

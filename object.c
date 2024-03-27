@@ -66,6 +66,10 @@ ObjString* copyString(const char* chars, int length) {
 }
 
 static void printFunction(ObjFunction* function) {
+    if (function->name == NULL) {
+        printf("<script>");
+        return;
+    }
     printf("<fn %s>", function->name->chars); //prints out the function name
 }
 
@@ -135,7 +139,7 @@ static void printList(ObjList* list) {
                 printf("nil");
                 break;
             case VAL_NUMBER:
-                printf("%g", AS_NUMBER(currentItem)/*(currentItem)->as.number*/);
+                printf("%g", AS_NUMBER(currentItem));
                 break;
             case VAL_OBJ: {
                 printObject(currentItem);

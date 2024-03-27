@@ -1,16 +1,23 @@
 #ifndef clox_vm_h
 #define clox_vm_h
 
-#include "common.h"
-#include "chunk.h"
+#include "object.h"
 #include "table.h"
 #include "value.h"
 
-#define STACK_MAX 256 // maximumm stack size
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT) // maximumm stack size
+
+typedef struct { // REPRESENTS A SINGULAR ONGOING FUNCTION CALL!!!
+    ObjFunction* function; // pointer to the function so we can look up constants, etc...
+    uint8_t* ip; // the caller stores its own instruction pointer => jump back to the ip in the frame calling this function
+    Value* slots; // points at the first slot a function can use
+} CallFrame;
 
 typedef struct {
-    Chunk* chunk;
-    uint8_t* ip; // points straight to the current bytecode isntruction in the chunk
+    CallFrame frames[FRAMES_MAX]; // contains te instruction pointer we used to hold here => WE HAVE A MAXIMUM CALL DEPTH (no infinite recursion basically)
+    int frameCount; // holds the current height of the CallFrame stack (how many ongoing function calls we have)
+
     Value stack[STACK_MAX]; // array of values defined as the stack
     Value* stackTop; // THE STACK POINTERRRRR
     Table globals; // hash table that stores our global variables

@@ -32,6 +32,8 @@
         "forward_list": "cpp",
         "variant": "cpp",
         "compare": "cpp",
-        "object.h": "c"
+        "object.h": "c",
+        "string": "c",
+        "iosfwd": "c"
     }
 }

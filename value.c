@@ -38,6 +38,7 @@ void printValue(Value value) {
     }
 }
 
+
 bool valuesEqual(Value a, Value b) {
     if (a.type != b.type) return false; // first a simple type check
     switch (a.type) {

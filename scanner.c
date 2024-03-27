@@ -118,7 +118,7 @@ static TokenType identifierType() { // USING A SMALL DFA TO CHECK IF THE IDENTIF
                 switch (scanner.start[1]) {
                     case 'a': return checkKeyword(2, 3, "lse", TOKEN_FALSE); // FALSE
                     case 'o': return checkKeyword(2, 1, "r", TOKEN_FOR); // FOR
-                    case 'u': return checkKeyword(2, 1, "n", TOKEN_FUN); // FUN
+                    case 'u': return checkKeyword(2, 2, "nc", TOKEN_FUN); // FUN
                 }
             }
             break;
@@ -127,7 +127,14 @@ static TokenType identifierType() { // USING A SMALL DFA TO CHECK IF THE IDENTIF
         case 'o': return checkKeyword(1, 1, "r", TOKEN_OR); // OR
         case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT); // PRINT
         case 'r': return checkKeyword(1, 5, "eturn", TOKEN_RETURN); // RETURN
-        case 's': return checkKeyword(1, 4, "uper", TOKEN_SUPER); // SUPER
+        case 's': 
+            if (scanner.current - scanner.start > 1) {
+                switch (scanner.start[1]) {
+                    case 'c': return checkKeyword(2, 2, "an", TOKEN_SCAN); // SCAN
+                    case 'u': return checkKeyword(2, 3, "per", TOKEN_SUPER); // SUPER
+                    case 'p': return checkKeyword(2, 3, "awn", TOKEN_VAR); // spawn
+                }
+            }
         case 't':
             if (scanner.current - scanner.start > 1) {
                 switch(scanner.start[1]) {
@@ -136,7 +143,6 @@ static TokenType identifierType() { // USING A SMALL DFA TO CHECK IF THE IDENTIF
                 }
             }
             break;
-        case 'v': return checkKeyword(1, 2, "ar", TOKEN_VAR); // VAR
         case 'w': return checkKeyword(1, 4, "hile", TOKEN_WHILE); // WHILE
     }
     return TOKEN_IDENTIFIER; // returns an identifier token to the compiler

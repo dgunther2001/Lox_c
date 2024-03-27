@@ -4,6 +4,6 @@
 #include "object.h"
 #include "vm.h"
 
-bool compile(const char* source, Chunk* chunk); // returns whether or not the actual compilation succeeded
+ObjFunction* compile(const char* source); // returns whether or not the actual compilation succeeded
 
 #endif

@@ -12,6 +12,7 @@ VM vm;
 
 static void resetStack() {
     vm.stackTop = vm.stack; // just sets the stack pointer back to the base of the stack, which is just a pointer to an array anyways
+    vm.frameCount = 0; // sets the number of call frames back down to 0
 }
 
 static void runtimeError(const char* format, ...) {
@@ -21,8 +22,9 @@ static void runtimeError(const char* format, ...) {
     va_end(args);
     fputs("\n", stderr);
 
-    size_t instruction = vm.ip - vm.chunk->code -1;
-    int line = vm.chunk->lines[instruction];
+    CallFrame* frame = &vm.frames[vm.frameCount - 1];
+    size_t instruction = frame->ip - frame->function->chunk.code -1;
+    int line = frame->function->chunk.lines[instruction];
     fprintf(stderr, "[line %d] in script\n", line);
     resetStack();
 }
@@ -133,9 +135,10 @@ static void concatenateSTRING_NUM() {
 }
 
 static InterpretResult run() {
-#define READ_BYTE() (*vm.ip++) //reads the value at the incremented instruction pointer
-#define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()]) // looks up the next byte in bytecode and and looks up the value in the value table and returns it
-#define READ_SHORT() (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8) | vm.ip[-1])) // takes the next two bytes in the chunk and creates a two bit integer out of them
+    CallFrame* frame = &vm.frames[vm.frameCount - 1]; // stores the topmost callframe in a local variable
+#define READ_BYTE() (*frame->ip++) //reads the value at the incremented instruction pointer
+#define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()]) // looks up the next byte in bytecode and and looks up the value in the value table and returns it
+#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1])) // takes the next two bytes in the chunk and creates a two bit integer out of them
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) do { if (!IS_NUMBER(peekVM(0)) || !IS_NUMBER(peekVM(1))) { runtimeError("Operands must be numbers."); return INTERPRET_RUNTIME_ERROR;} double b = AS_NUMBER(pop()); double a = AS_NUMBER(pop()); push(valueType(a op b)); } while(false) //  macro for executing a bianry op based on the input
 
@@ -149,7 +152,7 @@ static InterpretResult run() {
         printf("]");
     }
     printf("\n");
-    disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
+    disassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code)); //instead reading from the current call frame
 #endif
 
         uint8_t instruction;
@@ -166,12 +169,12 @@ static InterpretResult run() {
             case OP_POP: pop(); break;
             case OP_GET_LOCAL: {
                 uint8_t slot = READ_BYTE(); // finds where the local lives
-                push(vm.stack[slot]); // pushes it onto the stack?
+                push(frame->slots[slot]); // pushes it onto the stack?
                 break;
             }
             case OP_SET_LOCAL: {
                 uint8_t slot = READ_BYTE();
-                vm.stack[slot] = peekVM(0);
+                frame->slots[slot] = peekVM(0);
                 break;
             }
             case OP_GET_GLOBAL: {
@@ -314,21 +317,49 @@ static InterpretResult run() {
                 printf("\n");
                 break;
             }
+            case OP_SCAN: {
+                // PUSH THE VALUE ONTO THE STACK
+                
+                char* str = (char*)malloc(sizeof(char) * 1000); // allocates an array of size 20
+            
+                ObjString* string;
+                scanf("%s", str);
+                //printf("%s", str);
+                
+                string->chars = str;
+                //printf("%s", string->chars);
+                string->length = strlen(string->chars);
+                //printf("%d", string->length);
+            
+                ObjString* result = takeString(string->chars, string->length);
+                push(OBJ_VAL(result));
+
+                break;
+            }
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
-                vm.ip += offset;
+                frame->ip += offset;
                 break;
             }
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT(); // reads 2 bits instead
-                if (isFalsey(peekVM(0))) vm.ip += offset; // if the condition is false, we jump the instruction pointer...
+                if (isFalsey(peekVM(0))) frame->ip += offset; // if the condition is false, we jump the instruction pointer...
                 break;
             }
             case OP_LOOP: {
                 uint16_t offset = READ_SHORT(); // gets the offset within the loop
-                vm.ip -= offset; // jumps back to the start of the loop if called
+                frame->ip -= offset; // jumps back to the start of the loop if called
                 break;
             }
+            /*
+            case OP_CALL: {
+                int argCount = READ_BYTE();
+                if (!callValue(peekVM(argCount), argCount)); {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            */
             case OP_RETURN: {
                 return INTERPRET_OK;
             }
@@ -343,19 +374,14 @@ static InterpretResult run() {
 }
 
 InterpretResult interpret(const char* source) {
-    Chunk chunk;
-    initChunk(&chunk); // initializes a chunk
+    ObjFunction* function = compile(source);
+    if (function == NULL) return INTERPRET_COMPILE_ERROR;
 
-    if(!compile(source, &chunk)) { // throws an error if we get a compiler error
-        freeChunk(&chunk);
-        return INTERPRET_COMPILE_ERROR;
-    }
+    push(OBJ_VAL(function));
+    CallFrame* frame = &vm.frames[vm.frameCount++];
+    frame->function = function;
+    frame->ip = function->chunk.code;
+    frame->slots = vm.stack;
 
-    vm.chunk = &chunk; // pass or chunk into the vm
-    vm.ip = vm.chunk->code; // set the instruction pointer to the start of our code
-
-    InterpretResult result = run(); // runs the result
-
-    freeChunk(&chunk); // frees up the chunk
-    return result; // returns the result
+    return run();
 }
