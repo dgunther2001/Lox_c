@@ -2,19 +2,23 @@
 #define clox_object_h
 
 #include "common.h"
+#include "chunk.h"
 #include "value.h"
 
 #define OBJ_TYPE(value)     (AS_OBJ(value)->type) // extracts the object type from a given value
 
+#define IS_FUNCION(value)   isObjType(value, OBJ_FUNCTION)
 #define IS_STRING(value)    isObjType(value, OBJ_STRING)
 #define IS_LIST(value)      isObjType(value, OBJ_LIST)
 
 // back and forth between lox and c strings (array vs object representation)
+#define AS_FUNCTION(value)  ((ObjFunction*)AS_OBJ(value))
 #define AS_STRING(value)    ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)   (((ObjString*)AS_OBJ(value))->chars)
 #define AS_LIST(value)      ((ObjList*)AS_OBJ(value))
 
 typedef enum {
+    OBJ_FUNCTION,
     OBJ_STRING,
     OBJ_LIST
 } ObjType;
@@ -23,6 +27,13 @@ struct Obj {
     ObjType type; // defines the type
     struct Obj* next; // intrusive linked list that enables basic garbage collection, as we have reference to all objects
 }; 
+
+typedef struct {
+    Obj obj; // is just another object type, so it gets stored in the list of objects as well
+    int arity; // the number of parameters we expect
+    Chunk chunk; // each function has its own bytecode chunk
+    ObjString* name; // the actual name of the function
+} ObjFunction; // declares the function object data type
 
 struct ObjString {
     Obj obj; // the object itself
@@ -38,6 +49,7 @@ typedef struct {
     Value* items; // pointer the items in the list
 } ObjList;
 
+ObjFunction* newFunction();
 ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);
 void printObject(Value value);
@@ -48,6 +60,7 @@ void storeToList(ObjList* list, int index, Value value);
 Value indexFromList(ObjList* list, int index);
 void deleteFromList(ObjList* list, int index);
 bool isValidListIndex(ObjList* list, int index);
+int listLength(ObjList* list);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;

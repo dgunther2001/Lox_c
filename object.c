@@ -19,6 +19,14 @@ static Obj* allocateObject(size_t size, ObjType type) { // allocates an object o
     return object;
 }
 
+ObjFunction* newFunction() {
+    ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION); // allocates a function object
+    function->arity = 0; // sets the number of input parameters to 0
+    function->name = NULL; // sets the name of the function to NULL
+    initChunk(&function->chunk); // initializes a chunk within the function object to do all of the function operations
+    return function; // returns the initialized function object
+}
+
 static ObjString* allocateString(char* chars, int length, uint32_t hash) { //  allocates an object WITH TYPE STRING (kind of like the "constructor")
     ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
     string->length = length;
@@ -57,6 +65,10 @@ ObjString* copyString(const char* chars, int length) {
     return allocateString(heapChars, length, hash); // calls the string allocation fucntion
 }
 
+static void printFunction(ObjFunction* function) {
+    printf("<fn %s>", function->name->chars); //prints out the function name
+}
+
 ObjList* newList() {
     ObjList* list = ALLOCATE_OBJ(ObjList, OBJ_LIST); // allocates an object of type list
     list->items = NULL;
@@ -74,6 +86,10 @@ void appendToList(ObjList* list, Value value) { // append to the end of a list
     list->items[list->count] = value; //adds the desired value to the end of the list
     list->count++; // increments the count
     return;
+}
+
+int listLength(ObjList* list) { // returns the length of the list
+    return list->count;
 }
 
 void storeToList(ObjList* list, int index, Value value) { // change the value at a particular index
@@ -99,12 +115,54 @@ bool isValidListIndex(ObjList* list, int index) {
     return true;
 }
 
+
+static void printList(ObjList* list) {
+    printf("[");
+    for (int i = 0; i < list->count; i++) {
+        Value currentItem = list->items[i];
+        ValueType currentType = currentItem.type;
+        switch(currentType) {
+            case VAL_BOOL: {
+                int boolInt = (currentItem).as.boolean;
+                if (boolInt == 1) {
+                    printf("%s", "true");
+                } else {
+                    printf("%s", "false");
+                }
+                break;
+            }
+            case VAL_NIL:
+                printf("nil");
+                break;
+            case VAL_NUMBER:
+                printf("%g", AS_NUMBER(currentItem)/*(currentItem)->as.number*/);
+                break;
+            case VAL_OBJ: {
+                printObject(currentItem);
+                break;
+            }
+        }
+
+        if (i != list->count - 1) {
+            printf(", ");
+        }
+        
+    }
+    printf("]");
+}
+
+
+
 void printObject(Value value) { // allows us to print out the native c values of a lox object
     switch(OBJ_TYPE(value)) {
+        case OBJ_FUNCTION:
+            printFunction(AS_FUNCTION(value));
+            break;
         case OBJ_STRING:
             printf("%s", AS_CSTRING(value));
             break;
         case OBJ_LIST:
+            printList(AS_LIST(value));
             break;
     }
 }

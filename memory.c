@@ -24,6 +24,12 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 
 static void freeObject(Obj* object) {
     switch(object->type) {
+        case OBJ_FUNCTION: {
+            ObjFunction* function = (ObjFunction*)object; // casts the object to a function type
+            freeChunk(&function->chunk); // frees up the chunk
+            FREE(ObjFunction, object); // frees up the allocated space to the function itself
+            break; // breaks
+        }
         case OBJ_STRING: {
             ObjString* string = (ObjString*)object; // sets a pointer to the passed object pointer
             FREE_ARRAY(char, string->chars, string->length + 1); // calls the free array function, so we no longer store pertinent information

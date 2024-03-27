@@ -101,6 +101,13 @@ static Value deleteNative(int argCount, Value* args) {
     return NIL_VAL;
 }
 
+static Value lengthNative(int argCount, Value* args) {
+
+    ObjList* list = AS_LIST(args[0]); // takes the list in
+    listLength(list);  // calls the list length function
+    return NIL_VAL; // returns a NIL value
+}
+
 /*
 static void concatenateNUM_STRING() {
     ObjString* b = AS_STRING(pop());
