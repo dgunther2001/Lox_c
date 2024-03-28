@@ -54,14 +54,39 @@ static Value scanNative(int argCount, Value* args) {
 
     char* str = (char*)malloc(1000); // allocates an array of size 20     
     scanf("%[^\n]%*c", str);
-    ObjString* string;
+
+    int iterator = 0;
+    char current = str[iterator];
+    bool isNum = true;
+    bool hasDot = false;
+    while (current != '\0') {
+        if (!(current >= '0' && current <= '9') && current != '.') {
+            isNum = false;
+        }
+        if (current == '.' && hasDot == true) {
+            isNum = false;
+        }
+        if (current == '.') {
+            hasDot = true;
+        }
+        iterator++;
+        current = str[iterator];
+    }
+
+    if (isNum == false) {
+        ObjString* string;
 
 
-    //string->length = strlen(str);
-    string = takeString(str, strlen(str));
+        //string->length = strlen(str);
+        string = takeString(str, strlen(str));
 
-    Value returnVal  = OBJ_VAL(string);
-    return returnVal;
+        Value returnVal  = OBJ_VAL(string);
+        return returnVal;
+    } else { // all
+        double retVal =  atof(str);
+        return NUMBER_VAL(retVal);
+    }
+    
 
 }
 
@@ -231,13 +256,16 @@ static void concatenate() {
     push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
 
-/*
+
 static void concatenateNUM_STRING() {
     ObjString* b = AS_STRING(pop());
-    Value a_val = NUMBER_VAL(AS_NUMBER(pop()));
-    
-    ObjString* a = AS_STRING(a_val);
+    double a_val = (AS_NUMBER(pop()));
 
+    char* str = (char*)malloc(1000);
+    sprintf(str, "%g", a_val);
+    
+    ObjString* a = takeString(str, strlen(str));
+    
     int length = a->length + b->length; // creates a cumulative length value
     char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
     memcpy(chars, a->chars, a->length); // copies a 
@@ -246,14 +274,25 @@ static void concatenateNUM_STRING() {
 
     ObjString* result = takeString(chars, length); // gets the result
     push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
-    
-    
 }
-*/
 
 static void concatenateSTRING_NUM() {
+    double b_val = (AS_NUMBER(pop()));
+    char* str = (char*)malloc(1000);
+    sprintf(str, "%g", b_val);
+    ObjString* b = takeString(str, strlen(str));
+    ObjString* a = AS_STRING(pop());
 
+     int length = a->length + b->length; // creates a cumulative length value
+    char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
+    memcpy(chars, a->chars, a->length); // copies a 
+    memcpy(chars + a->length, b->chars, b->length); // copies b
+    chars[length] = '\0'; // adds the terminus
+
+    ObjString* result = takeString(chars, length); // gets the result
+    push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
+
 
 static InterpretResult run() {
     CallFrame* frame = &vm.frames[vm.frameCount - 1]; // stores the topmost callframe in a local variable
@@ -413,11 +452,11 @@ static InterpretResult run() {
             case OP_ADD: {
                 if (IS_STRING(peekVM(0)) && IS_STRING(peekVM(1))) {
                     concatenate();
-                } /* else if (IS_NUMBER(peekVM(0)) && IS_STRING(peekVM(1)))  {
+                }  else if (IS_NUMBER(peekVM(1)) && IS_STRING(peekVM(0)))  {
                     concatenateNUM_STRING();
-                } else if (IS_STRING(peekVM(0)) && IS_NUMBER(peekVM(1))) {
+                } else if (IS_STRING(peekVM(1)) && IS_NUMBER(peekVM(0))) {
                     concatenateSTRING_NUM(); 
-                } */ else if (IS_NUMBER(peekVM(0)) && IS_NUMBER(peekVM(1))) {
+                } else if (IS_NUMBER(peekVM(0)) && IS_NUMBER(peekVM(1))) {
                     double b = AS_NUMBER(pop());
                     double a = AS_NUMBER(pop());
                     push(NUMBER_VAL(a + b));

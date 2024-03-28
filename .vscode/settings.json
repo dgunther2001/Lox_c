@@ -37,6 +37,7 @@
         "iosfwd": "c",
         "__locale": "c",
         "__string": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "queue": "c"
     }
 }
