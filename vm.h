@@ -9,7 +9,7 @@
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT) // maximumm stack size
 
 typedef struct { // REPRESENTS A SINGULAR ONGOING FUNCTION CALL!!!
-    ObjFunction* function; // pointer to the function so we can look up constants, etc...
+    ObjClosure* closure;
     uint8_t* ip; // the caller stores its own instruction pointer => jump back to the ip in the frame calling this function
     Value* slots; // points at the first slot a function can use
 } CallFrame;
@@ -22,6 +22,7 @@ typedef struct {
     Value* stackTop; // THE STACK POINTERRRRR
     Table globals; // hash table that stores our global variables
     Table strings; // a table of STRINGSSSSS!!!
+    ObjUpvalue* openUpvalues; //head of the list of current upvalues
     Obj* objects; // pointer to the head of the intrusive linked list of objects
 } VM;
 

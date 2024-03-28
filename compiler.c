@@ -43,7 +43,13 @@ typedef struct {
 typedef struct {
     Token name; // stores a token with a name
     int depth; // stores a depth (0: global, 1: 1st nest, ... )
+    bool isCaptured; 
 } Local;
+
+typedef struct {
+    uint8_t index;
+    bool isLocal;
+} Upvalue;
 
 typedef enum {
     TYPE_FUNCTION,
@@ -57,6 +63,7 @@ typedef struct Compiler{
 
     Local locals[UINT8_COUNT]; // scores an array of local variables with a size up to 8 bit unsigned integers
     int localCount; // how many local variables we are storing
+    Upvalue upvalues[UINT8_COUNT];
     int scopeDepth; // an integer I imagine that we score a scope value we can compare based on how much nesting is going on
 } Compiler;
 
@@ -202,6 +209,7 @@ static void initCompiler(Compiler* compiler, FunctionType type) { // just intiti
     // these next lines fundamentally reserve stack space allowing us to later refer to function calls
     Local* local = &current->locals[current->localCount++];
     local->depth = 0;
+    local->isCaptured = false;
     local->name.start = "";
     local->name.length = 0;
 }
@@ -230,6 +238,11 @@ static void endScope() {
     while (current->localCount > 0 && // iterates over an entire local scope
         current->locals[current->localCount -1].depth > current->scopeDepth
     ) {
+        if (current->locals[current->localCount - 1].isCaptured) { // essentially, do we need to throw it onto the heap for later use??
+            emitByte(OP_CLOSE_UPVALUE);
+        } else{
+            emitByte(OP_POP);
+        }
         emitByte(OP_POP); // pops off the local variables
         current->localCount--; // decrements the number of local variables until we get to 0, thereby ending any trace of the scope
     } 
@@ -245,6 +258,7 @@ static int resolveLocal(Compiler* compiler, Token* name);
 static void and_(bool canAssign);
 static void or_(bool canAssign);
 static uint8_t argumentList();
+static int resolveUpvalue(Compiler* compiler, Token* name);
 
 static void binary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
@@ -355,6 +369,9 @@ static void namedVariable(Token name, bool canAssign) {
     if (arg != -1) { 
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
+    } else if ((arg = resolveUpvalue(current, &name)) != -1) {
+        getOp = OP_GET_UPVALUE;
+        setOp = OP_SET_UPVALUE;
     } else {
         arg = identifierConstant(&name);
         getOp = OP_GET_GLOBAL;
@@ -476,6 +493,44 @@ static int resolveLocal(Compiler* compiler, Token* name) {
     return -1; // otherwise returns -1 (NOT FOUND)
 }
 
+static int addUpvalue(Compiler* compiler, uint8_t index, bool isLocal) {
+    int upvalueCount = compiler->function->upvalueCount; // gets the current number of upvalues in a function
+
+    for (int i = 0; i < upvalueCount; i++) { // if the upvalue already exists, we just print the index in which it lives
+        Upvalue* upvalue = &compiler->upvalues[i];
+        if (upvalue->index == index && upvalue->isLocal == isLocal) {
+            return i;
+        }
+    }
+
+    if (upvalueCount == UINT8_COUNT) {
+        error("Too many closure values in function.");
+        return 0;
+    }
+
+    compiler->upvalues[upvalueCount].isLocal = isLocal; // 
+    compiler->upvalues[upvalueCount].index = index;
+    return compiler->function->upvalueCount++;
+}
+
+static int resolveUpvalue(Compiler* compiler, Token* name) {
+    if (compiler->enclosing == NULL) return -1;
+
+    int local = resolveLocal(compiler->enclosing, name);
+    if (local != -1) {
+        compiler->enclosing->locals[local].isCaptured = true; // we set the local to captured
+        return addUpvalue(compiler, (uint8_t)local, true);
+    }
+
+    // RECURSIVELY ADD UPVALUES TO THE ENCLOSING FUNCTIONS UNTIL IT GETS TO THE PROPER LOCATION
+    int upvalue = resolveUpvalue(compiler->enclosing, name); // essentially works along the nested compilers until we find the value we're looking for
+    if (upvalue != -1) {
+        return addUpvalue(compiler, (uint8_t)upvalue, false);
+    }
+
+    return -1;
+}
+
 static void addLocal(Token name) { // allows us to create a local variable
     if (current->localCount == UINT8_COUNT) { // if we run out of space to store local variables, we throw an error
         error("Too many local variables in function.");
@@ -485,6 +540,7 @@ static void addLocal(Token name) { // allows us to create a local variable
     Local* local = &current->locals[current->localCount++]; // initializes a new local variable
     local->name = name; // sets it to the name we declared for it
     local->depth = -1; // sets the variables depth accordingly
+    local->isCaptured = false; // all variables are initially not captured
 }
 
 static void declareVariable() {
@@ -589,7 +645,12 @@ static void function(FunctionType type) {
     block(); // deals with the internals of the block (the actual function body itself)
 
     ObjFunction* function = endCompiler(); // ends the local compiler
-    emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+
+    for (int i = 0; i < function->upvalueCount; i++) { // iterates over passed upvalues and emits them as instructions (variable in szie based on the number of up values)
+        emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+        emitByte(compiler.upvalues[i].index);
+    }
 }
 
 static void funDeclaration() {

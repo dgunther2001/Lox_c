@@ -125,7 +125,7 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
                    memcmp(entry->key->chars, chars, length) == 0 // check character by character
         ) return entry->key; // returns the value of the string (MORE LIKE A HASH SET => Strings are the keys)
 
-        index = (index + 1) ^ table->capacity;
+        index = (index + 1) % table->capacity;
     }
 
 

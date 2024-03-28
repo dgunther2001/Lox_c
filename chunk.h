@@ -15,6 +15,8 @@ typedef enum {
     OP_GET_GLOBAL, // loads global variables
     OP_DEFINE_GLOBAL, // defining global variable operation
     OP_SET_GLOBAL, // allow us to reset the values of a variable
+    OP_GET_UPVALUE,
+    OP_SET_UPVALUE,
     OP_EQUAL, // == => deals with != b/c !( == )
     OP_BUILD_LIST, // building a list in the first place
     OP_INDEX_SUBSCR, // getting a value at an index
@@ -33,6 +35,8 @@ typedef enum {
     OP_LOOP, // loop isntruction
     //OP_SCAN, // scanning operation
     OP_CALL, // function calls
+    OP_CLOSURE, // closures
+    OP_CLOSE_UPVALUE, // for closing upvalues out
     OP_RETURN, // return from current instruction
 } OpCode; // defines the opcode of our operation (note using bytecode instead of native assembly)
 

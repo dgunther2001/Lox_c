@@ -1,9 +1,9 @@
-func printList(a) {
-    print a;
-    for(spawn i = 0; i < len(a); i = i + 1) {
-        print a[i];
-    }
+spawn a = [1, 2, "daniel"];
+
+func b(a) {
+    print a[2];
+    print a[1];
+    print a[0];
 }
 
-spawn t = [1,2,3,4,5];
-printList(t);
+b(a);
