@@ -129,6 +129,12 @@ static void defineNative(const char* name, NativeFn function) {
 void initVM() { // initializes the stack
     resetStack(); // just sets the stack pointer to 0
     vm.objects = NULL;
+    vm.bytesAllocated = 0;
+    vm.nextGC = 1024 * 1024;
+
+    vm.grayCount = 0;
+    vm.grayCapacity = 0;
+    vm.grayStack = NULL;
 
     initTable(&vm.globals); // initializes our hash table of global variables
     initTable(&vm.strings); // initializes our hash table of strings
@@ -243,8 +249,8 @@ static bool isFalsey(Value value) {
 
 static void concatenate() {
     // gets both initial strings off of the stack
-    ObjString* b = AS_STRING(pop()); 
-    ObjString* a = AS_STRING(pop());
+    ObjString* b = AS_STRING(peekVM(0));
+    ObjString* a = AS_STRING(peekVM(1));
 
     int length = a->length + b->length; // creates a cumulative length value
     char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
@@ -253,13 +259,15 @@ static void concatenate() {
     chars[length] = '\0'; // adds the terminus
 
     ObjString* result = takeString(chars, length); // gets the result
+    pop();
+    pop();
     push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
 
 
 static void concatenateNUM_STRING() {
-    ObjString* b = AS_STRING(pop());
-    double a_val = (AS_NUMBER(pop()));
+    ObjString* b = AS_STRING(peekVM(0));
+    double a_val = (AS_NUMBER(peekVM(1)));
 
     char* str = (char*)malloc(1000);
     sprintf(str, "%g", a_val);
@@ -273,15 +281,17 @@ static void concatenateNUM_STRING() {
     chars[length] = '\0'; // adds the terminus
 
     ObjString* result = takeString(chars, length); // gets the result
+    pop();
+    pop();
     push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
 
 static void concatenateSTRING_NUM() {
-    double b_val = (AS_NUMBER(pop()));
+    double b_val = (AS_NUMBER(peekVM(0)));
     char* str = (char*)malloc(1000);
     sprintf(str, "%g", b_val);
     ObjString* b = takeString(str, strlen(str));
-    ObjString* a = AS_STRING(pop());
+    ObjString* a = AS_STRING(peekVM(1));
 
      int length = a->length + b->length; // creates a cumulative length value
     char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
@@ -290,6 +300,8 @@ static void concatenateSTRING_NUM() {
     chars[length] = '\0'; // adds the terminus
 
     ObjString* result = takeString(chars, length); // gets the result
+    pop();
+    pop();
     push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
 

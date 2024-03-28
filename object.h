@@ -32,6 +32,7 @@ typedef enum {
 
 struct Obj {
     ObjType type; // defines the type
+    bool isMarked; // is it marked for garbage collection
     struct Obj* next; // intrusive linked list that enables basic garbage collection, as we have reference to all objects
 }; 
 

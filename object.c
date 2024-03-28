@@ -12,10 +12,16 @@
 static Obj* allocateObject(size_t size, ObjType type) { // allocates an object of the proper type
     Obj* object = (Obj*)reallocate(NULL, 0, size);
     object->type = type;
+    object->isMarked = false; // initialized as not marked for garbage collection
 
     // allows us to insert objects onto our linked list of objects
     object->next = vm.objects;
     vm.objects = object;
+
+#ifdef DEBUG_LOG_GC
+    printf("%p allocate %zu for %d\n", (void*)object, size, type);
+#endif
+
     return object;
 }
 
@@ -52,7 +58,9 @@ static ObjString* allocateString(char* chars, int length, uint32_t hash) { //  a
     string->length = length;
     string->chars = chars;
     string->hash = hash;
+    push(OBJ_VAL(string));
     tableSet(&vm.strings, string, NIL_VAL); // all the values are just nil
+    pop();
     return string;
 }
 

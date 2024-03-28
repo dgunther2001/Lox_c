@@ -24,5 +24,7 @@ bool tableSet(Table* table, ObjString* key, Value value);  // putting entries in
 bool tableDelete(Table* table, ObjString* key); // allows us to delerer an entry from a hash table
 void tableAddAll(Table* from, Table* to); // function to copy ALL entries of one hash table to another
 ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t hash); // allows us to return a pointer instead of duplicate entries, which we are trying to avoid with tableGet() & findEntry() methods
+void tableRemoveWhite(Table* table);
+void markTable(Table* table); // mark the global varibales in our hash table
 
 #endif

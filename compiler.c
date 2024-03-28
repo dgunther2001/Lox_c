@@ -4,9 +4,10 @@
 
 #include "common.h"
 #include "compiler.h"
+#include "memory.h"
 #include "scanner.h"
 
-#ifndef DEBUG_PRINT_CODE
+#ifdef DEBUG_PRINT_CODE
 #include "debug.h"
 #endif
 
@@ -218,7 +219,7 @@ static ObjFunction* endCompiler() {
     emitReturn();
     ObjFunction* function = current->function; 
 
-#ifndef DEBUG_PRINT_CODE
+#ifdef DEBUG_PRINT_CODE
     if (!parser.hadError) {
         disassembleChunk(currentChunk(), function->name != NULL ? function->name->chars : "<script>");
     }
@@ -860,4 +861,12 @@ ObjFunction* compile(const char* source) {
 
     ObjFunction* function = endCompiler(); // closes out of the compiler and returns the function
     return parser.hadError ? NULL : function; // if there was an error, return false, else return true
+}
+
+void markCompilerRoots() {
+    Compiler* compiler = current;
+    while (compiler != NULL) {
+        markObject((Obj*)compiler->function);
+        compiler = compiler->enclosing;
+    }
 }

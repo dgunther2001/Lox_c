@@ -23,7 +23,12 @@ typedef struct {
     Table globals; // hash table that stores our global variables
     Table strings; // a table of STRINGSSSSS!!!
     ObjUpvalue* openUpvalues; //head of the list of current upvalues
+    size_t bytesAllocated;
+    size_t nextGC;
     Obj* objects; // pointer to the head of the intrusive linked list of objects
+    int grayCount;
+    int grayCapacity;
+    Obj** grayStack;
 } VM;
 
 typedef enum { // vm runs the chunk & and responds with a value from this enum

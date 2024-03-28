@@ -1,4 +1,2 @@
-spawn a = [1, 2];
-
-print 10.2 + "d";
-print "a" + 11.4;
+print "daniel" + 7;
+print 7 + "j";

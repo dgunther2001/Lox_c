@@ -38,6 +38,7 @@
         "__locale": "c",
         "__string": "c",
         "string_view": "c",
-        "queue": "c"
+        "queue": "c",
+        "debug.h": "c"
     }
 }

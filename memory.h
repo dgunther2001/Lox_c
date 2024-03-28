@@ -13,9 +13,12 @@
 
 #define GROW_ARRAY(type, pointer, oldCount, newCount) (type*)reallocate(pointer, sizeof(type) * (oldCount), sizeof(type) * newCount) // essentially calls the reallocate function where the real work gets done
 
-#define FREE_ARRAY(type, pointer, oldCount) reallocate(pointer, sizeof(type) * oldCount, 0) // another "wrapper" that calls the realloc function, but sets the size of allocated memory to 0
+#define FREE_ARRAY(type, pointer, oldCount) reallocate(pointer, sizeof(type) * (oldCount), 0)
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize); // reallocates an array of a larger size, and will set the void pointer to the proper type
+void markObject(Obj* object); // specific object marking for garbag collection purposes
+void markValue(Value value); // marks a value for the garbage collector
+void collectGarbage(); // THE ENTIRE GARBAGE COLLECTOR -> utilizes the mark and sweep algorithm used for Lisp (right after FORTRAN)
 void freeObjects(); // frees up all of the objects when we end the vm
 
 #endif

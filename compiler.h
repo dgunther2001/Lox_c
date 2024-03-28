@@ -5,5 +5,6 @@
 #include "vm.h"
 
 ObjFunction* compile(const char* source); // returns whether or not the actual compilation succeeded
+void markCompilerRoots();
 
 #endif
