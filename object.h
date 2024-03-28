@@ -8,17 +8,20 @@
 #define OBJ_TYPE(value)     (AS_OBJ(value)->type) // extracts the object type from a given value
 
 #define IS_FUNCION(value)   isObjType(value, OBJ_FUNCTION)
+#define IS_NATIVE(value)    isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)    isObjType(value, OBJ_STRING)
 #define IS_LIST(value)      isObjType(value, OBJ_LIST)
 
 // back and forth between lox and c strings (array vs object representation)
 #define AS_FUNCTION(value)  ((ObjFunction*)AS_OBJ(value))
+#define AS_NATIVE(value)    (((ObjNative*)AS_OBJ(value))->function)
 #define AS_STRING(value)    ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)   (((ObjString*)AS_OBJ(value))->chars)
 #define AS_LIST(value)      ((ObjList*)AS_OBJ(value))
 
 typedef enum {
     OBJ_FUNCTION,
+    OBJ_NATIVE,
     OBJ_STRING,
     OBJ_LIST
 } ObjType;
@@ -35,6 +38,13 @@ typedef struct {
     ObjString* name; // the actual name of the function
 } ObjFunction; // declares the function object data type
 
+typedef Value (*NativeFn)(int argCount, Value* args);
+
+typedef struct {
+    Obj obj;
+    NativeFn function;
+} ObjNative;
+
 struct ObjString {
     Obj obj; // the object itself
     int length; // string length
@@ -50,6 +60,7 @@ typedef struct {
 } ObjList;
 
 ObjFunction* newFunction();
+ObjNative* newNative(NativeFn);
 ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);
 void printObject(Value value);

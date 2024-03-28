@@ -130,7 +130,7 @@ static TokenType identifierType() { // USING A SMALL DFA TO CHECK IF THE IDENTIF
         case 's': 
             if (scanner.current - scanner.start > 1) {
                 switch (scanner.start[1]) {
-                    case 'c': return checkKeyword(2, 2, "an", TOKEN_SCAN); // SCAN
+                    //case 'c': return checkKeyword(2, 2, "an", TOKEN_SCAN); // SCAN
                     case 'u': return checkKeyword(2, 3, "per", TOKEN_SUPER); // SUPER
                     case 'p': return checkKeyword(2, 3, "awn", TOKEN_VAR); // spawn
                 }

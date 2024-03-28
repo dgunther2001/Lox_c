@@ -30,6 +30,10 @@ static void freeObject(Obj* object) {
             FREE(ObjFunction, object); // frees up the allocated space to the function itself
             break; // breaks
         }
+        case OBJ_NATIVE: {
+            FREE(ObjNative, object);
+            break;
+        }
         case OBJ_STRING: {
             ObjString* string = (ObjString*)object; // sets a pointer to the passed object pointer
             FREE_ARRAY(char, string->chars, string->length + 1); // calls the free array function, so we no longer store pertinent information

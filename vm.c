@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 
 #include "debug.h"
 #include "object.h"
@@ -10,70 +11,8 @@
 
 VM vm;
 
-static void resetStack() {
-    vm.stackTop = vm.stack; // just sets the stack pointer back to the base of the stack, which is just a pointer to an array anyways
-    vm.frameCount = 0; // sets the number of call frames back down to 0
-}
-
-static void runtimeError(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-    fputs("\n", stderr);
-
-    CallFrame* frame = &vm.frames[vm.frameCount - 1];
-    size_t instruction = frame->ip - frame->function->chunk.code -1;
-    int line = frame->function->chunk.lines[instruction];
-    fprintf(stderr, "[line %d] in script\n", line);
-    resetStack();
-}
-
-void initVM() { // initializes the stack
-    resetStack(); // just sets the stack pointer to 0
-    vm.objects = NULL;
-
-    initTable(&vm.globals); // initializes our hash table of global variables
-    initTable(&vm.strings); // initializes our hash table of strings
-}
-
-void freeVM() {
-    freeTable(&vm.globals); // frees up the memory of the global variable hash table in the vm
-    freeTable(&vm.strings); // frees up memory of the string hash table in the vm
-    freeObjects(); // frees up the linked list of objects we were storing
-}
-
-void push(Value value) { // pushes a value onto the stack
-    *vm.stackTop = value; // dereferences the stacktop, and sets it equal to the value input
-    vm.stackTop++; // increments the stack pointer to the next availible memory location
-}
-
-Value pop() {
-    vm.stackTop--; // decrements the stack pointer
-    return *vm.stackTop; // returns the dereferenced value (it can now be overwritten)
-}
-
-static Value peekVM(int distance) {
-    return vm.stackTop[-1 - distance]; // returns the value from the top of the stack, but doesn't push it
-}
-
-static bool isFalsey(Value value) {
-    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
-}
-
-static void concatenate() {
-    // gets both initial strings off of the stack
-    ObjString* b = AS_STRING(pop()); 
-    ObjString* a = AS_STRING(pop());
-
-    int length = a->length + b->length; // creates a cumulative length value
-    char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
-    memcpy(chars, a->chars, a->length); // copies a 
-    memcpy(chars + a->length, b->chars, b->length); // copies b
-    chars[length] = '\0'; // adds the terminus
-
-    ObjString* result = takeString(chars, length); // gets the result
-    push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
+static Value clockNative(int argCount, Value* args) {
+    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
 static Value appendNative(int argCount, Value* args) {
@@ -104,10 +43,144 @@ static Value deleteNative(int argCount, Value* args) {
 }
 
 static Value lengthNative(int argCount, Value* args) {
-
     ObjList* list = AS_LIST(args[0]); // takes the list in
-    listLength(list);  // calls the list length function
-    return NIL_VAL; // returns a NIL value
+    int len = listLength(list);  // calls the list length function
+    Value valLen = NUMBER_VAL(len);
+    return valLen;
+}
+
+static Value scanNative(int argCount, Value* args) {
+
+    char* str = (char*)malloc(1000); // allocates an array of size 20     
+    scanf("%[^\n]%*c", str);
+    ObjString* string;
+
+
+    //string->length = strlen(str);
+    string = takeString(str, strlen(str));
+
+    Value returnVal  = OBJ_VAL(string);
+    return returnVal;
+
+}
+
+static void resetStack() {
+    vm.stackTop = vm.stack; // just sets the stack pointer back to the base of the stack, which is just a pointer to an array anyways
+    vm.frameCount = 0; // sets the number of call frames back down to 0
+}
+
+static void runtimeError(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fputs("\n", stderr);
+
+    CallFrame* frame = &vm.frames[vm.frameCount - 1];
+    size_t instruction = frame->ip - frame->function->chunk.code -1;
+    int line = frame->function->chunk.lines[instruction];
+    fprintf(stderr, "[line %d] in script\n", line);
+    resetStack();
+}
+
+static void defineNative(const char* name, NativeFn function) {
+    push(OBJ_VAL(copyString(name, (int)strlen(name))));
+    push(OBJ_VAL(newNative(function)));
+    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+    pop();
+    pop();
+}
+
+void initVM() { // initializes the stack
+    resetStack(); // just sets the stack pointer to 0
+    vm.objects = NULL;
+
+    initTable(&vm.globals); // initializes our hash table of global variables
+    initTable(&vm.strings); // initializes our hash table of strings
+
+    defineNative("clock", clockNative);
+    defineNative("len", lengthNative);
+    defineNative("append", appendNative);
+    defineNative("delete", deleteNative);
+    defineNative("scan", scanNative);
+
+}
+
+void freeVM() {
+    freeTable(&vm.globals); // frees up the memory of the global variable hash table in the vm
+    freeTable(&vm.strings); // frees up memory of the string hash table in the vm
+    freeObjects(); // frees up the linked list of objects we were storing
+}
+
+void push(Value value) { // pushes a value onto the stack
+    *vm.stackTop = value; // dereferences the stacktop, and sets it equal to the value input
+    vm.stackTop++; // increments the stack pointer to the next availible memory location
+}
+
+Value pop() {
+    vm.stackTop--; // decrements the stack pointer
+    return *vm.stackTop; // returns the dereferenced value (it can now be overwritten)
+}
+
+static Value peekVM(int distance) {
+    return vm.stackTop[-1 - distance]; // returns the value from the top of the stack, but doesn't push it
+}
+
+static bool callVM(ObjFunction* function, int argCount) { // essentialy initializes the call frame onto the stack
+    if (argCount != function->arity) {
+        runtimeError("Expected %d arguments, but got %d.", function->arity, argCount);
+        return false;
+    }
+
+    if (vm.frameCount == FRAMES_MAX) {
+        runtimeError("Stack overflow.");
+        return false;
+    }
+
+    CallFrame* frame = &vm.frames[vm.frameCount++];
+    frame->function = function;
+    frame->ip = function->chunk.code;
+    frame->slots = vm.stackTop - argCount - 1;
+    return true;
+}
+
+static bool callValue(Value callee, int argCount) {
+    if(IS_OBJ(callee)) { // if the callee is an object type
+        switch(OBJ_TYPE(callee)) {
+            case OBJ_FUNCTION: // if the callee is a function
+                return callVM(AS_FUNCTION(callee), argCount); // calls the function
+            case OBJ_NATIVE: {
+                NativeFn native = AS_NATIVE(callee);
+                Value result  = native(argCount, vm.stackTop - argCount);
+                vm.stackTop -= argCount + 1;
+                push(result);
+                return true;
+            }
+            default:
+                break;
+        }
+    }
+    runtimeError("Can only call functions and classes.");
+    return false;
+}
+
+static bool isFalsey(Value value) {
+    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+static void concatenate() {
+    // gets both initial strings off of the stack
+    ObjString* b = AS_STRING(pop()); 
+    ObjString* a = AS_STRING(pop());
+
+    int length = a->length + b->length; // creates a cumulative length value
+    char* chars = ALLOCATE(char, length+1); // allocates memory for the concatenated string
+    memcpy(chars, a->chars, a->length); // copies a 
+    memcpy(chars + a->length, b->chars, b->length); // copies b
+    chars[length] = '\0'; // adds the terminus
+
+    ObjString* result = takeString(chars, length); // gets the result
+    push(OBJ_VAL(result)); // pushes the result in the form of an object onto the stack
 }
 
 /*
@@ -145,7 +218,7 @@ static InterpretResult run() {
 
     for (;;) {
 #ifndef DEBUG_TRACE_EXECUTION
-    print("            ");
+    printf("            ");
     for(Value* slot = vm.stack; slot < vm.stackTop; slot++) { // prints the stack each time we execute an instruction
         printf("[");
         printValue(*slot);
@@ -317,6 +390,7 @@ static InterpretResult run() {
                 printf("\n");
                 break;
             }
+            /*
             case OP_SCAN: {
                 // PUSH THE VALUE ONTO THE STACK
                 
@@ -333,9 +407,11 @@ static InterpretResult run() {
             
                 ObjString* result = takeString(string->chars, string->length);
                 push(OBJ_VAL(result));
+                //FREE(ObjString*, string);
 
                 break;
             }
+            */
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
                 frame->ip += offset;
@@ -351,17 +427,28 @@ static InterpretResult run() {
                 frame->ip -= offset; // jumps back to the start of the loop if called
                 break;
             }
-            /*
+            
             case OP_CALL: {
                 int argCount = READ_BYTE();
-                if (!callValue(peekVM(argCount), argCount)); {
+                if (!callValue(peekVM(argCount), argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
+                frame =&vm.frames[vm.frameCount - 1];
                 break;
             }
-            */
+            
             case OP_RETURN: {
-                return INTERPRET_OK;
+                Value result = pop(); // gets the result
+                vm.frameCount--; // decrements the frame count
+                if (vm.frameCount == 0) { // if its the EOF, it interpreted OK
+                    pop();
+                    return INTERPRET_OK;
+                }
+
+                vm.stackTop = frame->slots; // reset the stack pointer back to the frame pointer
+                push(result); // push the return value
+                frame = &vm.frames[vm.frameCount - 1]; // go back a frame
+                break;
             }
         }
     }
@@ -378,10 +465,7 @@ InterpretResult interpret(const char* source) {
     if (function == NULL) return INTERPRET_COMPILE_ERROR;
 
     push(OBJ_VAL(function));
-    CallFrame* frame = &vm.frames[vm.frameCount++];
-    frame->function = function;
-    frame->ip = function->chunk.code;
-    frame->slots = vm.stack;
+    callVM(function, 0);
 
     return run();
 }

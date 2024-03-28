@@ -158,6 +158,7 @@ static int emitJump(uint8_t instruction) {
 }
 
 static void emitReturn() {
+    emitByte(OP_NIL);
     emitByte(OP_RETURN);
 }
 
@@ -284,9 +285,11 @@ static void grouping(bool canAssign) {
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression."); // looks for a closing right parenthesis
 }
 
+/*
 static void scan(bool canAssign) {
     emitByte(OP_SCAN);
 }
+*/
 
 static void numberC(bool canAssign) { // this simply compiles number literals
     double value = strtod(parser.previous.start, NULL);
@@ -383,12 +386,12 @@ static void unary(bool canAssign) {
 }
 
 ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN]      = {grouping, call, PREC_NONE},
+    [TOKEN_LEFT_PAREN]      = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN]     = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE]      = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE]     = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACKET]    = {list, subscript, PREC_SUBSCRIPT},
-    [TOKEN_SCAN]            = {scan, NULL, PREC_NONE},
+    //[TOKEN_SCAN]            = {scan, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACKET]   = {NULL, NULL, PREC_NONE},
     [TOKEN_COMMA]           = {NULL, NULL, PREC_NONE},
     [TOKEN_DOT]             = {NULL, NULL, PREC_NONE},
@@ -686,12 +689,27 @@ static void printStatement() {
     emitByte(OP_PRINT);
 }
 
+static void returnStatement() {
+    if (current->type == TYPE_SCRIPT) {
+        error("Can't return from top-level code.");
+    }
+    if (matchComp(TOKEN_SEMICOLON)) {
+        emitReturn();
+    } else {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
+        emitByte(OP_RETURN);
+    }
+}
+
+/*
 static void scanStatement() {
     expression();
     //statement();
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(OP_SCAN);
 }
+*/
 
 static void whileStatement() {
     int loopStart = currentChunk()->count; // capture the location of compilation to jump back to
@@ -744,12 +762,14 @@ static void declaration() {
 static void statement() {
     if (matchComp(TOKEN_PRINT)) {
         printStatement();
-    } else if (matchComp(TOKEN_SCAN)) {
+    } /*else if (matchComp(TOKEN_SCAN)) {
         scanStatement();
-    } else if (matchComp(TOKEN_FOR)) {
+    }*/ else if (matchComp(TOKEN_FOR)) {
         forStatement();
     } else if (matchComp(TOKEN_IF)) {
         ifStatement();
+    } else if (matchComp(TOKEN_RETURN)) {
+        returnStatement();
     } else if (matchComp(TOKEN_WHILE)) {
         whileStatement();
     } else if (matchComp(TOKEN_LEFT_BRACE)) {

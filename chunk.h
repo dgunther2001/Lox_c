@@ -31,7 +31,7 @@ typedef enum {
     OP_JUMP, // a regulation unconditional branch (jump)
     OP_JUMP_IF_FALSE, // jump instruction for conditionals
     OP_LOOP, // loop isntruction
-    OP_SCAN, // scanning operation
+    //OP_SCAN, // scanning operation
     OP_CALL, // function calls
     OP_RETURN, // return from current instruction
 } OpCode; // defines the opcode of our operation (note using bytecode instead of native assembly)

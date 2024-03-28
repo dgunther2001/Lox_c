@@ -34,6 +34,9 @@
         "compare": "cpp",
         "object.h": "c",
         "string": "c",
-        "iosfwd": "c"
+        "iosfwd": "c",
+        "__locale": "c",
+        "__string": "c",
+        "string_view": "c"
     }
 }

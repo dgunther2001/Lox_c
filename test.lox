@@ -1,4 +1,9 @@
-spawn a = scan;
-spawn b = scan;
+func printList(a) {
+    print a;
+    for(spawn i = 0; i < len(a); i = i + 1) {
+        print a[i];
+    }
+}
 
-print a + b;
+spawn t = [1,2,3,4,5];
+printList(t);

@@ -27,6 +27,12 @@ ObjFunction* newFunction() {
     return function; // returns the initialized function object
 }
 
+ObjNative* newNative(NativeFn function) {
+    ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+    native->function = function;
+    return native;
+}
+
 static ObjString* allocateString(char* chars, int length, uint32_t hash) { //  allocates an object WITH TYPE STRING (kind of like the "constructor")
     ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
     string->length = length;
@@ -161,6 +167,9 @@ void printObject(Value value) { // allows us to print out the native c values of
     switch(OBJ_TYPE(value)) {
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
+            break;
+        case OBJ_NATIVE:
+            printf("<native fn>");
             break;
         case OBJ_STRING:
             printf("%s", AS_CSTRING(value));
