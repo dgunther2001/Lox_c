@@ -1,2 +1,6 @@
-print "daniel" + 7;
-print 7 + "j";
+spawn a  = "dan";
+spawn b = true;
+print type(b);
+print type(a);
+print type(ceil);
+print type(nil);

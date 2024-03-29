@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #include "debug.h"
 #include "object.h"
@@ -43,10 +44,20 @@ static Value deleteNative(int argCount, Value* args) {
 }
 
 static Value lengthNative(int argCount, Value* args) {
-    ObjList* list = AS_LIST(args[0]); // takes the list in
-    int len = listLength(list);  // calls the list length function
-    Value valLen = NUMBER_VAL(len);
-    return valLen;
+
+    if (IS_LIST(args[0])) {
+        ObjList* list = AS_LIST(args[0]); // takes the list in
+        int len = listLength(list);  // calls the list length function
+        Value valLen = NUMBER_VAL(len);
+        return valLen;
+    } else if (IS_STRING(args[0])) {
+        ObjString* string = AS_STRING(args[0]);
+        int len = string->length;
+        Value valLen = NUMBER_VAL(len);
+        return valLen;
+    } else {
+        return NUMBER_VAL(0);
+    }
 }
 
 
@@ -88,6 +99,88 @@ static Value scanNative(int argCount, Value* args) {
     }
     
 
+}
+
+static Value piNative(int argCount, Value* args){
+    double pi = 3.141592653;
+    return NUMBER_VAL(pi);
+}
+
+static Value eNative(int argcount, Value* args) {
+    double e = 2.718281828;
+    double exponent = AS_NUMBER(args[0]);
+    double result = pow(e, exponent);
+    return NUMBER_VAL(result);
+}
+
+static Value sqrtNative(int argcount, Value* args) {
+    double rootVal = AS_NUMBER(args[0]);
+    double result = sqrt(rootVal);
+    return NUMBER_VAL(result);
+}
+
+static Value exponentiationNative(int argcount, Value* args) {
+    double base = AS_NUMBER(args[0]);
+    double exp = AS_NUMBER(args[1]);
+    double result = pow(base, exp);
+    return NUMBER_VAL(result);
+}
+
+static Value nthRootNative(int argcount, Value* args) {
+    double value = AS_NUMBER(args[0]);
+    double root = AS_NUMBER(args[1]);
+    double result = pow(value, 1.0/root);
+    return NUMBER_VAL(result);
+}
+
+static Value logNative(int argcount, Value* args) {
+    double base = AS_NUMBER(args[0]);
+    double value = AS_NUMBER(args[1]);
+    double result = log2(value) / log2(base);
+    return NUMBER_VAL(result);
+}
+
+static Value floorNative(int argcount, Value* args) {
+    double val = AS_NUMBER(args[0]);
+    double floor = floorf(val);
+    return NUMBER_VAL(floor);
+}
+
+static Value ceilingNative(int argcount, Value* args) {
+    double val = AS_NUMBER(args[0]);
+    double ceiling = ceilf(val);
+    return  NUMBER_VAL(ceiling);
+}
+
+static Value absvalNative(int argcount, Value* args) {
+    double val = AS_NUMBER(args[0]);
+    double absVal = fabs(val);
+    return NUMBER_VAL(absVal);
+}
+
+static Value typeNative(int argcount, Value* args) {
+    Value val = args[0];
+    ObjString* type;
+
+    if (IS_NUMBER(val)){
+        type = copyString("num", 3);
+    } else if (IS_BOOL(val)) {
+        type = copyString("bool", 4);
+    } else if (IS_NIL(val)) {
+        type = copyString("nil", 3);
+    } else if (IS_STRING(val)) {
+        type = copyString("str", 3);
+    } else if (IS_LIST(val)) {
+        type = copyString("list", 4);
+    } else if (IS_FUNCION(val)) {
+        type = copyString("func", 4);
+    } else if (IS_NATIVE(val)) {
+        type = copyString("nvf", 3);
+    } else {
+        type = copyString("other", 5);
+    }
+
+    return OBJ_VAL(type);
 }
 
 static void resetStack() {
@@ -144,7 +237,16 @@ void initVM() { // initializes the stack
     defineNative("append", appendNative);
     defineNative("delete", deleteNative);
     defineNative("scan", scanNative);
-
+    defineNative("pi", piNative);
+    defineNative("exp", eNative);
+    defineNative("sqrt", sqrtNative);
+    defineNative("power", exponentiationNative);
+    defineNative("nroot", nthRootNative);
+    defineNative("log", logNative);
+    defineNative("floor", floorNative);
+    defineNative("ceil", ceilingNative);
+    defineNative("abs", absvalNative);
+    defineNative("type", typeNative);
 }
 
 void freeVM() {
@@ -409,29 +511,56 @@ static InterpretResult run() {
             }
             case OP_INDEX_SUBSCR: {
                 Value index = pop();
-                Value list = pop();
+                Value obj = pop();
                 Value result;
 
-                if (!IS_LIST(list)) {
+                if (!IS_STRING(obj) && !IS_LIST(obj)) {
                     runtimeError("Invalid type to index to.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                ObjList* listObj = AS_LIST(list);
 
                 if(!IS_NUMBER(index)) {
                     runtimeError("List index is not a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-                int indexInt = AS_NUMBER(index);
 
-                if (!isValidListIndex(listObj, indexInt)) {
-                    runtimeError("List index out of range.");
-                    return INTERPRET_RUNTIME_ERROR;
+                if (IS_LIST(obj)) {
+                    Value list = obj;
+
+                    ObjList* listObj = AS_LIST(list);
+
+                    int indexInt = AS_NUMBER(index);
+
+                    if (!isValidListIndex(listObj, indexInt)) {
+                        runtimeError("List index out of range.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    result = indexFromList(listObj, AS_NUMBER(index));
+                    push(result);
+                    break;
+                } else if (IS_STRING(obj)) {
+                    Value string = obj;
+
+                    ObjString* stringObj = AS_STRING(string);
+
+                    int indexInt = AS_NUMBER(index);
+
+                    if (AS_NUMBER(index) > stringObj->length) {
+                        runtimeError("String index out of range.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    char resOut = stringObj->chars[indexInt];
+
+                    char* out = (char*)malloc(sizeof(char) * 1);
+                    out[0] = resOut;
+                    ObjString* output = takeString(out, 1);
+                    Value result = OBJ_VAL(output);
+
+                    push(result);
+                    break;
                 }
-
-                result = indexFromList(listObj, AS_NUMBER(index));
-                push(result);
-                break;
             }
             case OP_STORE_SUBSCR: {
                 Value item = pop();
