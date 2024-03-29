@@ -176,6 +176,8 @@ static Value typeNative(int argcount, Value* args) {
         type = copyString("func", 4);
     } else if (IS_NATIVE(val)) {
         type = copyString("nvf", 3);
+    } else if (IS_CLASS(val)) {
+        type = copyString("class", 5);
     } else {
         type = copyString("other", 5);
     }
@@ -290,6 +292,11 @@ static bool callVM(ObjClosure* closure, int argCount) { // essentialy initialize
 static bool callValue(Value callee, int argCount) {
     if(IS_OBJ(callee)) { // if the callee is an object type
         switch(OBJ_TYPE(callee)) {
+            case OBJ_CLASS: {
+                ObjClass* klass = AS_CLASS(callee);
+                vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
+                return true;
+            }
             case OBJ_CLOSURE:
                 return callVM(AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
@@ -484,6 +491,38 @@ static InterpretResult run() {
             case OP_SET_UPVALUE: {
                 uint8_t slot = READ_BYTE();
                 *frame->closure->upvalues[slot]->location = peekVM(0);
+                break;
+            }
+            case OP_GET_PROPERTY: {
+                if (!IS_INSTANCE(peekVM(0))) {
+                    runtimeError("Only instances have properties.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                ObjInstance* instance = AS_INSTANCE(peekVM(0));
+                ObjString* name = READ_STRING();
+
+                Value value;
+                if (tableGet(&instance->fields, name, &value)) {
+                    pop();
+                    push(value);
+                    break;
+                }
+
+                runtimeError("Undefined propert '%s.", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            case OP_SET_PROPERTY: {
+                if (!IS_INSTANCE(peekVM(1))) {
+                    runtimeError("Only instances have fields.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                ObjInstance* instance = AS_INSTANCE(peekVM(1));
+                tableSet(&instance->fields, READ_STRING(), peekVM(0));
+                Value value = pop();
+                pop();
+                push(value);
                 break;
             }
             case OP_EQUAL: {
@@ -707,6 +746,9 @@ static InterpretResult run() {
                 frame = &vm.frames[vm.frameCount - 1]; // go back a frame
                 break;
             }
+            case OP_CLASS: 
+                push(OBJ_VAL(newClass(READ_STRING()))); // take the string name from the constants table; create a new class with that name; push a pointer to the class object onto the stack
+                break;
         }
     }
 

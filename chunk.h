@@ -17,6 +17,8 @@ typedef enum {
     OP_SET_GLOBAL, // allow us to reset the values of a variable
     OP_GET_UPVALUE,
     OP_SET_UPVALUE,
+    OP_GET_PROPERTY,
+    OP_SET_PROPERTY,
     OP_EQUAL, // == => deals with != b/c !( == )
     OP_BUILD_LIST, // building a list in the first place
     OP_INDEX_SUBSCR, // getting a value at an index
@@ -38,6 +40,7 @@ typedef enum {
     OP_CLOSURE, // closures
     OP_CLOSE_UPVALUE, // for closing upvalues out
     OP_RETURN, // return from current instruction
+    OP_CLASS, // class operation
 } OpCode; // defines the opcode of our operation (note using bytecode instead of native assembly)
 
 typedef struct { /* dynamic arrays are.. cache friendly; constant-time for indexed lookup; constant-time for appending */

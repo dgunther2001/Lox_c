@@ -1,6 +1,7 @@
-spawn a  = "dan";
-spawn b = true;
-print type(b);
-print type(a);
-print type(ceil);
-print type(nil);
+class student{}
+
+spawn daniel = student();
+daniel.name = "Daniel";
+daniel.school = "SUNY New Paltz";
+daniel.gpa = 4.00;
+print daniel.school;

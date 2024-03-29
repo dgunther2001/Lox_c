@@ -25,6 +25,12 @@ static Obj* allocateObject(size_t size, ObjType type) { // allocates an object o
     return object;
 }
 
+ObjClass* newClass(ObjString* name) {
+    ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
+    klass->name = name;
+    return klass;
+}
+
 ObjClosure* newClosure(ObjFunction* function) {
     ObjUpvalue** upvalues = ALLOCATE(ObjUpvalue*, function->upvalueCount); // allocates the pointer to the pointer of the array of upvalues
     for(int i = 0; i < function->upvalueCount; i++) { //initializes all of the upvalues
@@ -45,6 +51,13 @@ ObjFunction* newFunction() {
     function->name = NULL; // sets the name of the function to NULL
     initChunk(&function->chunk); // initializes a chunk within the function object to do all of the function operations
     return function; // returns the initialized function object
+}
+
+ObjInstance* newInstance(ObjClass* klass) {
+    ObjInstance* instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE); // allocates an instance object
+    instance->klass = klass; // sets the instances class
+    initTable(&instance->fields); // initializes a hash table for fields
+    return instance; // returns the instance of a particular class type
 }
 
 ObjNative* newNative(NativeFn function) {
@@ -195,12 +208,17 @@ static void printList(ObjList* list) {
 
 void printObject(Value value) { // allows us to print out the native c values of a lox object
     switch(OBJ_TYPE(value)) {
+        case OBJ_CLASS:
+            printf("%s", AS_CLASS(value)->name->chars);
+            break;
         case OBJ_CLOSURE:
             printFunction(AS_CLOSURE(value)->function);
             break;
         case OBJ_FUNCTION:
             printFunction(AS_FUNCTION(value));
             break;
+        case OBJ_INSTANCE:
+            printf("%s instance", AS_INSTANCE(value)->klass->name->chars); // prints that it is an instane of a particlar class name
         case OBJ_NATIVE:
             printf("<native fn>");
             break;
