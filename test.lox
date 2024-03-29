@@ -1,7 +1,11 @@
-class student{}
+class student{
+    display() {
+        print "name: " + this.name + ", " + "school: " + this.school + ", " + "gpa: " + this.gpa + ".";
+    }
+}
 
 spawn daniel = student();
 daniel.name = "Daniel";
 daniel.school = "SUNY New Paltz";
-daniel.gpa = 4.00;
-print daniel.school;
+daniel.gpa = "4.00";
+daniel.display();

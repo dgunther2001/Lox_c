@@ -19,6 +19,15 @@ static int constantInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 2; // iterates the offest by 2 because this is a 2 byte instruction
 }
 
+static int invokeInstruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t constant = chunk->code[offset + 1];
+    uint8_t argCount = chunk->code[offset + 2];
+    printf("%-16s (%d args) %4d '", name, argCount, constant);
+    printValue(chunk->constants.values[constant]);
+    printf("\n");
+    return offset + 3;
+}
+
 static int simpleInstruction(const char* name, int offset) {
     printf("%s\n", name); // prints out the name of the instruction
     return offset + 1; // iterates the offset when we return back to the dissasembleChunk(...) method and returns
@@ -75,6 +84,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
         }
         case OP_CALL:
             return byteInstruction("OP_CALL", chunk, offset);
+        case OP_INVOKE:
+            return invokeInstruction("OP_INVOKE", chunk, offset);
         case OP_CLOSE_UPVALUE:
             return simpleInstruction("OP_CLOSE_UPVALUE", offset);
         case OP_RETURN: 
@@ -133,6 +144,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return simpleInstruction("OP_NEGATE", offset);
         case OP_CLASS:
             return constantInstruction("OP_CLASS", chunk, offset);
+        case OP_METHOD:
+            return constantInstruction("OP_METHOD", chunk, offset);
         default:
             printf("%s %d\n", "Unknown opcode", instruction);
             return offset+1; // iterates the offset when we return back to the dissasembleChunk(...) method and returns

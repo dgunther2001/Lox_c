@@ -22,6 +22,7 @@ typedef struct {
     Value* stackTop; // THE STACK POINTERRRRR
     Table globals; // hash table that stores our global variables
     Table strings; // a table of STRINGSSSSS!!!
+    ObjString* initString;
     ObjUpvalue* openUpvalues; //head of the list of current upvalues
     size_t bytesAllocated;
     size_t nextGC;

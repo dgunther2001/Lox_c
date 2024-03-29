@@ -54,6 +54,8 @@ typedef struct {
 
 typedef enum {
     TYPE_FUNCTION,
+    TYPE_INITIALIZER,
+    TYPE_METHOD,
     TYPE_SCRIPT,
 } FunctionType; // creates an enum with our function type that is also strored within the compiler
 
@@ -68,8 +70,13 @@ typedef struct Compiler{
     int scopeDepth; // an integer I imagine that we score a scope value we can compare based on how much nesting is going on
 } Compiler;
 
+typedef struct ClassCompiler {
+    struct ClassCompiler* enclosing;
+} ClassCompiler;
+
 Parser parser;
 Compiler* current = NULL; // initialzes a Compiler pointer
+ClassCompiler* currentClass = NULL;
 
 static Chunk* currentChunk() { // (if not in function call, just returns the chunk within the compiler)
     return &current->function->chunk; // returns the chunk in the current function instead
@@ -166,7 +173,12 @@ static int emitJump(uint8_t instruction) {
 }
 
 static void emitReturn() {
-    emitByte(OP_NIL);
+    if (current->type == TYPE_INITIALIZER) { // if its an intializer, implicitly return the class
+        emitBytes(OP_GET_LOCAL, 0); // the value 0 contains an instance (remember all of the receiver stuff)
+    } else {
+        emitByte(OP_NIL);
+    }
+
     emitByte(OP_RETURN);
 }
 
@@ -211,8 +223,13 @@ static void initCompiler(Compiler* compiler, FunctionType type) { // just intiti
     Local* local = &current->locals[current->localCount++];
     local->depth = 0;
     local->isCaptured = false;
-    local->name.start = "";
-    local->name.length = 0;
+    if (type != TYPE_FUNCTION) {
+        local->name.start = "this";
+        local->name.length = 4;
+    } else {
+        local->name.start = "";
+        local->name.length = 0;
+    }
 }
 
 static ObjFunction* endCompiler() {
@@ -293,6 +310,10 @@ static void dot(bool canAssign) {
     if (canAssign && matchComp(TOKEN_EQUAL)) {
         expression();
         emitBytes(OP_SET_PROPERTY, name); // sets the property
+    } else if (matchComp(TOKEN_LEFT_PAREN)) { // optimizes the invocation and method calls
+        uint8_t argCount = argumentList();
+        emitBytes(OP_INVOKE, name); // OP_INVOKE is a combination of OP_GET_PORPERTY & OP_CALL => this is how you begin to optimize your compiler (PATTERNS!!!!!)
+        emitByte(argCount);
     } else {
         emitBytes(OP_GET_PROPERTY, name); // gets the property
     }
@@ -403,6 +424,15 @@ static void variableC(bool canAssign) {
     namedVariable(parser.previous, canAssign);
 }
 
+static void this_(bool canAssign) {
+    if (currentClass == NULL) {
+        error("Can't use 'this' outside of a class.");
+        return;
+    }
+
+    variableC(false);
+}
+
 static void unary(bool canAssign) {
     TokenType operatorType = parser.previous.type; // firgures out the previous token type
 
@@ -453,7 +483,7 @@ ParseRule rules[] = {
     [TOKEN_PRINT]           = {NULL, NULL, PREC_NONE},
     [TOKEN_RETURN]          = {NULL, NULL, PREC_NONE},
     [TOKEN_SUPER]           = {NULL, NULL, PREC_NONE},
-    [TOKEN_THIS]            = {NULL, NULL, PREC_NONE},
+    [TOKEN_THIS]            = {this_, NULL, PREC_NONE},
     [TOKEN_TRUE]            = {literal, NULL, PREC_NONE},
     [TOKEN_VAR]             = {NULL, NULL, PREC_NONE},
     [TOKEN_WHILE]           = {NULL, NULL, PREC_NONE},
@@ -631,7 +661,7 @@ static void expression() {
 
 static void block() {
     while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
-        declaration(); // calls a declarationwhile we're within a block
+        declaration(); // calls a declaration while we're within a block
     }
 
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after block."); // consumes a right brace once it has been found
@@ -666,16 +696,55 @@ static void function(FunctionType type) {
     }
 }
 
+static void method() {
+    consume(TOKEN_IDENTIFIER, "Expect method name.");
+    uint8_t constant = identifierConstant(&parser.previous);
+
+    FunctionType type = TYPE_METHOD;
+    if (parser.previous.length == 4 && memcmp(parser.previous.start, "init", 4) == 0) { // allows us to implicity return an object without writing "return this" in the object constructor
+        type = TYPE_INITIALIZER;
+    }
+
+    function(type);
+    emitBytes(OP_METHOD, constant);
+}
+
+/*
+static void fieldDec() {
+
+}
+*/
+
 static void classDeclaration() {
     consume(TOKEN_IDENTIFIER, "Expect class name."); // consumes the class name identifier
+    Token className = parser.previous;
     uint8_t nameConstant = identifierConstant(&parser.previous); // grabs the name
     declareVariable();
 
     emitBytes(OP_CLASS, nameConstant);
     defineVariable(nameConstant); // define the classes name as a variable
 
+    ClassCompiler ClassCompiler;
+    ClassCompiler.enclosing = currentClass;
+    currentClass = &ClassCompiler;
+
+    namedVariable(className, false);
     consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+    while(!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+        method();
+    }
+    /*
+    uint8_t fieldDecl;
+    while(!check(TOKEN_RIGHT_BRACE)) {
+        fieldDecl = identifierConstant(&parser.previous);
+        emitBytes(OP_DECLARE_PROPERTY, fieldDecl);
+        consume(TOKEN_SEMICOLON, "Expect semicolon after field declaration.");
+    }
+    */
     consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+    emitByte(OP_POP);
+
+    currentClass = currentClass->enclosing;
 }
 
 static void funDeclaration() {
@@ -782,6 +851,10 @@ static void returnStatement() {
     if (matchComp(TOKEN_SEMICOLON)) {
         emitReturn();
     } else {
+        if (current->type == TYPE_INITIALIZER) {
+            error("Can't return a value from an initializer.");
+        }
+
         expression();
         consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
         emitByte(OP_RETURN);
