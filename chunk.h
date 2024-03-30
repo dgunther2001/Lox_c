@@ -20,12 +20,14 @@ typedef enum {
     //OP_DECLARE_PROPERTY,
     OP_GET_PROPERTY,
     OP_SET_PROPERTY,
+    OP_GET_SUPER, 
     OP_EQUAL, // == => deals with != b/c !( == )
     OP_BUILD_LIST, // building a list in the first place
     OP_INDEX_SUBSCR, // getting a value at an index
     OP_STORE_SUBSCR, // storing at an index
     OP_GREATER, // < => deals with >= b/c is !( < )
     OP_LESS, // > => deals with <= b/c is !( > )
+    //OP_INCREMENT, // increment operator
     OP_ADD, // addition operator
     OP_SUBTRACT, // subtraction operator
     OP_MULTIPLY, // multiplication operator
@@ -39,10 +41,12 @@ typedef enum {
     //OP_SCAN, // scanning operation
     OP_CALL, // function calls
     OP_INVOKE, // method invocation
+    OP_SUPER_INVOKE, // optimization of super calls
     OP_CLOSURE, // closures
     OP_CLOSE_UPVALUE, // for closing upvalues out
     OP_RETURN, // return from current instruction
     OP_CLASS, // class operation
+    OP_INHERIT, // inheritance operation
     OP_METHOD, // class methods
 } OpCode; // defines the opcode of our operation (note using bytecode instead of native assembly)
 

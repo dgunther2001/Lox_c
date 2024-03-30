@@ -9,3 +9,13 @@ daniel.name = "Daniel";
 daniel.school = "SUNY New Paltz";
 daniel.gpa = "4.00";
 daniel.display();
+
+class collegeStudent extends student {
+
+}
+
+spawn joe = collegeStudent();
+joe.name = "joe";
+joe.school = "Denison";
+joe.gpa = "3.22";
+joe.display();

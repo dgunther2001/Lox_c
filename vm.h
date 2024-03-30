@@ -43,6 +43,7 @@ extern VM vm; // allows external exposure of our virtual machine
 void initVM();
 void freeVM();
 InterpretResult interpret(const char* source);
+static void runtimeError(const char* format, ...);
 void push(Value value);
 Value pop();
 

@@ -140,6 +140,25 @@ static Value logNative(int argcount, Value* args) {
     return NUMBER_VAL(result);
 }
 
+static Value log10Native(int argcount, Value* args) {
+    double value = AS_NUMBER(args[0]);
+    double result = log10(value);
+    return NUMBER_VAL(result);
+}
+
+static Value log2Native(int argcount, Value* args) {
+    double value = AS_NUMBER(args[0]);
+    double result = log2(value);
+    return NUMBER_VAL(result);
+}
+
+static Value lnNative(int argcount, Value* args) {
+    double base = 2.718281828;
+    double value = AS_NUMBER(args[0]);
+    double result = log2(value) / log2(base);
+    return NUMBER_VAL(result);
+}
+
 static Value floorNative(int argcount, Value* args) {
     double val = AS_NUMBER(args[0]);
     double floor = floorf(val);
@@ -183,6 +202,31 @@ static Value typeNative(int argcount, Value* args) {
     }
 
     return OBJ_VAL(type);
+}
+
+static Value toStringNative(int argcount, Value* args) {
+    Value value = args[0];
+    ObjString* retVal;
+    char* str = (char*)malloc(1000);
+    if (IS_NUMBER(value)) {
+        sprintf(str, "%g", AS_NUMBER(value));
+        retVal = takeString(str, strlen(str));
+    } else if (IS_BOOL(value)) {
+        if (value.as.boolean == true) {
+            retVal = copyString("true", 4);
+        } else {
+            retVal = copyString("false", 5);
+        }
+    } else if (IS_NIL(value)) {
+        retVal = copyString("nil", 3);
+    } else if (IS_STRING(value)) {
+        retVal = copyString(AS_STRING(value)->chars, AS_STRING(value)->length);
+    } else {
+        //runtimeError("Invalid type conversion.");
+        retVal = copyString("", 0);
+    }
+
+    return OBJ_VAL(retVal);
 }
 
 static void resetStack() {
@@ -248,10 +292,14 @@ void initVM() { // initializes the stack
     defineNative("power", exponentiationNative);
     defineNative("nroot", nthRootNative);
     defineNative("log", logNative);
+    defineNative("log10", log10Native);
+    defineNative("log2", log2Native);
+    defineNative("ln", lnNative);
     defineNative("floor", floorNative);
     defineNative("ceil", ceilingNative);
     defineNative("abs", absvalNative);
     defineNative("type", typeNative);
+    defineNative("toString", toStringNative);
 }
 
 void freeVM() {
@@ -598,6 +646,16 @@ static InterpretResult run() {
                 push(value);
                 break;
             }
+            case OP_GET_SUPER: {
+                ObjString* name = READ_STRING();
+                ObjClass* superclass = AS_CLASS(pop());
+
+                if(!bindMethod(superclass, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                break;
+            }
             case OP_EQUAL: {
                 Value b = pop();
                 Value a = pop();
@@ -702,6 +760,14 @@ static InterpretResult run() {
             }
             case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
             case OP_LESS: BINARY_OP(BOOL_VAL, <); break;
+            /*
+            case OP_INCREMENT: {
+                double num = AS_NUMBER(pop());
+                double result = num++;
+                push(NUMBER_VAL(result));
+                break;
+            }
+            */
             case OP_ADD: {
                 if (IS_STRING(peekVM(0)) && IS_STRING(peekVM(1))) {
                     concatenate();
@@ -713,7 +779,12 @@ static InterpretResult run() {
                     double b = AS_NUMBER(pop());
                     double a = AS_NUMBER(pop());
                     push(NUMBER_VAL(a + b));
-                } else {
+                } /*else if (IS_NUMBER(peekVM(0)) && AS_STRING(peekVM(1))->chars =="+") {
+                    double b = AS_NUMBER(pop());
+                    pop();
+                    b++;
+                    push(NUMBER_VAL(b));
+                }*/ else {
                     runtimeError(
                         "Operands must be two numbers or two strings."
                     );
@@ -795,6 +866,16 @@ static InterpretResult run() {
                 frame = &vm.frames[vm.frameCount - 1];
                 break;
             }
+            case OP_SUPER_INVOKE: {
+                ObjString* method = READ_STRING();
+                int argCount = READ_BYTE();
+                ObjClass* superclass = AS_CLASS(pop());
+                if (!invokeFromClass(superclass, method, argCount)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                frame = &vm.frames[vm.frameCount - 1];
+                break;
+            }
             case OP_CLOSURE: {
                 ObjFunction* function = AS_FUNCTION(READ_CONSTANT()); // gets the function on the stack
                 ObjClosure* closure = newClosure(function); // initializes the closure
@@ -831,6 +912,18 @@ static InterpretResult run() {
             case OP_CLASS: 
                 push(OBJ_VAL(newClass(READ_STRING()))); // take the string name from the constants table; create a new class with that name; push a pointer to the class object onto the stack
                 break;
+            case OP_INHERIT: {
+                Value superclass = peekVM(1);
+                if (!IS_CLASS(superclass)) {
+                    runtimeError("Superclass must be a class.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                ObjClass* subclass = AS_CLASS(peekVM(0));
+                tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);  // essentilly full on method inheritance
+                pop();
+                break;
+            }
             case OP_METHOD:
                 defineMethod(READ_STRING());
                 break;

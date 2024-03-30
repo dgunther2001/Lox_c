@@ -112,7 +112,14 @@ static TokenType identifierType() { // USING A SMALL DFA TO CHECK IF THE IDENTIF
     switch (scanner.start[0]) { // big switch statement to see if the first character matches any of the keywords' first characters
         case 'a': return checkKeyword(1, 2, "nd", TOKEN_AND); // sees if we match AND
         case 'c': return checkKeyword(1, 4, "lass", TOKEN_CLASS); // CLASS 
-        case 'e': return checkKeyword(1, 3, "lse", TOKEN_ELSE); // ELSE
+        case 'e': 
+            if (scanner.current - scanner.start > 1) {
+                switch(scanner.start[1]) {
+                    case 'l': return checkKeyword(2, 2, "se", TOKEN_ELSE); // ELSE
+                    case 'x': return checkKeyword(2, 5, "tends", TOKEN_EXTENDS); // EXTENDS
+                }
+            }
+        
         case 'f': // deals with our greater amalgamation of keywords that start with the letter f
             if (scanner.current - scanner.start > 1) {
                 switch (scanner.start[1]) {
@@ -201,10 +208,12 @@ Token scanToken() {
         case '.': return makeToken(TOKEN_DOT);
         case '-': return makeToken(TOKEN_MINUS);
         case '+': return makeToken(TOKEN_PLUS);
+    
         case '/': return makeToken(TOKEN_SLASH);
         case '*': return makeToken(TOKEN_STAR);
 
         // deals with out two character lexemes (!=, ==, etc...)
+        //case '+': return makeToken(match('+') ? TOKEN_PLUS_PLUS : TOKEN_PLUS);
         case '!': return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG); // checks to see whether it is just !, or !=
         case '=': return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL); // checks to see whether it is ==, or just =
         case '<': return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS); // checks to see whether it is <= or just <
