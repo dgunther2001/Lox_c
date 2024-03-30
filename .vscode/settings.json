@@ -40,6 +40,7 @@
         "string_view": "c",
         "queue": "c",
         "debug.h": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "stdint.h": "c"
     }
 }

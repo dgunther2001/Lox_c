@@ -34,7 +34,7 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) { // takes
             return entry;
         }
 
-        index = (index + 1) % capacity;
+        index = (index + 1) & (capacity - 1);
     }
 }
 
@@ -115,7 +115,7 @@ void tableAddAll(Table* from, Table* to) {
 ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t hash) {
     if (table->count == 0) return NULL; // if the table is empty, return a null pointer
 
-    uint32_t index = hash % table->capacity;
+    uint32_t index = hash & (table->capacity - 1);
     for(;;) {
         Entry* entry = &table->entries[index];
         if (entry->key == NULL) {
@@ -125,7 +125,7 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
                    memcmp(entry->key->chars, chars, length) == 0 // check character by character
         ) return entry->key; // returns the value of the string (MORE LIKE A HASH SET => Strings are the keys)
 
-        index = (index + 1) % table->capacity;
+        index = (index + 1) & (table->capacity - 1);
     }
 }
 
