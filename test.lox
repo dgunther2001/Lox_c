@@ -1,17 +1,22 @@
 class student{
+    init() {
+        this.name = "generic";
+    }
     display() {
         print "name: " + this.name + ", " + "school: " + this.school + ", " + "gpa: " + this.gpa + ".";
     }
 }
 
 spawn daniel = student();
-daniel.name = "Daniel";
+//daniel.name = "Daniel";
 daniel.school = "SUNY New Paltz";
 daniel.gpa = "4.00";
 daniel.display();
 
 class collegeStudent extends student {
-
+    display() {
+        print "name: " + this.name + " is miserable.";
+    }
 }
 
 spawn joe = collegeStudent();

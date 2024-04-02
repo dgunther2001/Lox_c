@@ -1,0 +1,94 @@
+class node {
+    init(data) {
+        this.data = data;
+        this.left = nil;
+        this.right = nil;
+    }
+
+    addChild(data) {
+        if (data < this.data and this.left == nil) {
+            this.left = node(data);
+        } else if (data < this.data and this.left != nil) {
+            this.left.addChild(data);
+        } else if (data >= this.data and this.right == nil) {
+            this.right = node(data);
+        } else {
+            this.right.addChild(data);
+        }
+    }
+
+    preOrder(node) { 
+        print node.data;
+        if (node.left != nil) {
+            node.preOrder(node.left);
+        }
+        if (node.right != nil) {
+            node.preOrder(node.right);
+        }
+    }
+
+    postOrder(node) {
+        if (node.left != nil) {
+            node.postOrder(node.left);
+        }
+        if (node.right != nil) {
+            node.postOrder(node.right);
+        }
+        print node.data;
+    }
+
+    inOrder(node) {
+        if (node.left != nil) {
+            node.inOrder(node.left);
+        }
+        print node.data;
+        if (node.right != nil) {
+            node.inOrder(node.right);
+        }
+    }
+}
+
+class BST{
+    init(data) {
+        this.root = node(data);
+    }
+    addChild(data) {
+        this.root.addChild(data);
+    }
+
+    preOrderTree() {
+        print "";
+        print "Pre-order traversal: ";
+        print this.root.data;
+        this.root.preOrder(this.root.left);
+        this.root.preOrder(this.root.right);
+    }
+
+    postOrderTree() {
+        print "";
+        print "Post-order traversal: ";
+        this.root.postOrder(this.root.left);
+        this.root.postOrder(this.root.right); 
+        print this.root.data;
+    }
+
+    inOrderTree() {
+        print "";
+        print "In-order traversal: ";
+        this.root.inOrder(this.root.left);
+        print this.root.data;
+        this.root.inOrder(this.root.right); 
+    }
+}
+
+spawn myTree = BST(10);
+myTree.addChild(5);
+myTree.addChild(2);
+myTree.addChild(7);
+myTree.addChild(22);
+myTree.addChild(13);
+myTree.addChild(35);
+
+myTree.preOrderTree();
+myTree.postOrderTree();
+myTree.inOrderTree();

@@ -30,6 +30,7 @@ typedef enum { // precedence levels in order from lowest to highest
     PREC_UNARY, // - !
     PREC_CALL, // . ()
     PREC_SUBSCRIPT, // []
+    //PREC_LAMBDA,
     PREC_PRIMARY
 } Precendence;
 
@@ -54,6 +55,7 @@ typedef struct {
 
 typedef enum {
     TYPE_FUNCTION,
+    //TYPE_LAMBDA,
     TYPE_INITIALIZER,
     TYPE_METHOD,
     TYPE_SCRIPT,
@@ -512,6 +514,7 @@ ParseRule rules[] = {
     [TOKEN_FALSE]           = {literal, NULL, PREC_NONE},
     [TOKEN_FOR]             = {NULL, NULL, PREC_NONE},
     [TOKEN_FUN]             = {NULL, NULL, PREC_NONE},
+    //[TOKEN_LAMBDA]          = {NULL, NULL, PREC_NONE},
     [TOKEN_IF]              = {NULL, NULL, PREC_NONE},
     [TOKEN_NIL]             = {literal, NULL, PREC_NONE},
     [TOKEN_OR]              = {NULL, or_, PREC_OR},
@@ -901,6 +904,26 @@ static void printStatement() {
     emitByte(OP_PRINT);
 }
 
+/*
+static void lambdaExpression() {
+    consume(TOKEN_LEFT_PAREN, "Expect '('.");
+    if(!check(TOKEN_RIGHT_PAREN)) { // if the next token is not a right parentheis
+        do {
+            
+            current->function->arity++; // increments the number of parameters
+            if (current->function->arity > 255) {
+                errorAtCurrent("Cannot have more than 255 paramaters for a function.");
+            }
+            uint8_t constant = parseVariable("Expect parameter name.");
+            defineVariable(constant);
+        } while (matchComp(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+    consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+    block(); // deals with the internals of the block (the actual function body itself)
+}
+*/
+
 static void returnStatement() {
     if (current->type == TYPE_SCRIPT) {
         error("Can't return from top-level code.");
@@ -984,7 +1007,9 @@ static void statement() {
         scanStatement();
     }*/ else if (matchComp(TOKEN_FOR)) {
         forStatement();
-    } else if (matchComp(TOKEN_IF)) {
+    } /*else if (matchComp(TOKEN_LAMBDA)) {
+        lambdaExpression();
+    }*/ else if (matchComp(TOKEN_IF)) {
         ifStatement();
     } else if (matchComp(TOKEN_RETURN)) {
         returnStatement();

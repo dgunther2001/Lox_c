@@ -130,6 +130,7 @@ static TokenType identifierType() { // USING A SMALL DFA TO CHECK IF THE IDENTIF
             }
             break;
         case 'i': return checkKeyword(1, 1, "f", TOKEN_IF); // IF
+        //case 'l': return checkKeyword(1, 5, "ambda", TOKEN_LAMBDA); // LAMBDA EXPRESSIONS
         case 'n': return checkKeyword(1, 2, "il", TOKEN_NIL); // NIL
         case 'o': return checkKeyword(1, 1, "r", TOKEN_OR); // OR
         case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT); // PRINT
